@@ -55,7 +55,7 @@ export default class Collectable extends GameObject
             this.game.tweenGroup.add(new Tween(this.mesh.position,true).to({y:this.mesh.position.y+2},150).easing(Easing.Cubic.Out));
             this.game.tweenGroup.add(new Tween(this.mesh.children[0].material,true).to({opacity:0},150).onComplete(()=>this.remove()));
 
-            this.game.playSound("coin.mp3");
+            this.game.playSound("coin");
         }
 
 

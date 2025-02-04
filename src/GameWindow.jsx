@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Game from './Classes/Game';
-import { modelNames, textureNames } from './data';
+import { modelImports, textureImports } from './data';
 import { GLTFLoader, MTLLoader, OBJLoader } from 'three/examples/jsm/Addons.js';
 import { Button, Spinner } from 'react-bootstrap';
 import RunningGameInterface from './Components/RunningGameInterface';
@@ -38,22 +38,23 @@ function GameWindow() {
             setModels(m => ({...m,[name]:loadedModel}));
 
             loadedModelsCount++;
-            if(loadedModelsCount === modelNames.length)
+            if(loadedModelsCount === Object.keys(modelImports).length)
             {
                 setLoading(false);
             }
         }
 
 
-        modelNames.forEach((modelName)=>{
+        Object.entries(modelImports).forEach(([modelName,data])=>{
 
+            
             const [name,type] = modelName.split(".");
 
-            if(type==="obj")
+            if(data.type==="obj")
             {
                 const materialLoader = new MTLLoader();
 
-                materialLoader.load(`./src/assets/models/${name}.mtl`,(materials)=>{
+                materialLoader.load(data.material,(materials)=>{
 
                     materials.preload();
 
@@ -61,16 +62,16 @@ function GameWindow() {
 
                     objMaterial.setMaterials(materials);
 
-                    objMaterial.load(`./src/assets/models/${modelName}`,(loadedModel)=>{
+                    objMaterial.load(data.model,(loadedModel)=>{
                         loadModel(name,loadedModel);
                     });
                 });
             }
-            else if(type==="glb")
+            else if(data.type==="glb")
             {
                 const gltfLoader = new GLTFLoader();
 
-                gltfLoader.load(`./src/assets/models/${modelName}`,(loadedModel)=>{
+                gltfLoader.load(data.model,(loadedModel)=>{
                     loadModel(name,loadedModel);
                 });
             }
@@ -80,11 +81,10 @@ function GameWindow() {
 
         });
         
-        textureNames.forEach((textureName)=>{
+        Object.entries(textureImports).forEach(([textureName,texturePath])=>{
             
-            const texture = new TextureLoader().load(`./src/assets/textures/${textureName}`);
+            const texture = new TextureLoader().load(texturePath);
             setTextures(t => ({...t,[textureName]:texture}));
-
         })
     }
 
@@ -115,7 +115,7 @@ function GameWindow() {
         <div className='page-container w-100 h-100 d-flex justify-content-center align-items-center m-0'>
         {
             loading ?
-            <Spinner color='white' />
+            <h1 className='text-white'>Loading...</h1>
             :
             <div className='position-relative' style={{width:width+"px",height:height+"px"}}>
                 <canvas ref={canvasRef} width={width} height={height}></canvas>

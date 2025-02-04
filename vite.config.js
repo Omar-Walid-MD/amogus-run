@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     nodePolyfills(), // Add this plugin for polyfills like fs
   ],
+  base: "",
   resolve: {
     alias: {
       path: 'path-browserify', // Alias path to the browser version
@@ -19,4 +20,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ['path-browserify'], // Make sure path-browserify is optimized
   },
+  assetsInclude: ['**/*.glb', '**/*.obj','**/*.mtl']
 })

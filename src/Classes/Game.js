@@ -9,6 +9,7 @@ import CollectableSpawner from './CollectableSpawner.js';
 import Impostor from './Impostor.js';
 import { Tween, Group, Easing } from '@tweenjs/tween.js';
 import DeadPlayer from './DeadPlayer.js';
+import { soundEffects } from '../data.js';
 
 const keys = {
     a: "KeyA",
@@ -404,7 +405,7 @@ export default class Game
 
             this.directionalLight.color = new THREE.Color("red");
 
-            this.playSound("dead.mp3");
+            this.playSound("dead");
 
 
             setTimeout(() => {
@@ -519,7 +520,7 @@ export default class Game
 
     playSound(sound,looping=false)
     {
-        let element = this.addElement(`<audio autoplay src="./src/assets/sounds/${sound}" ${looping ? "loop" : ""}></audio>`);
+        let element = this.addElement(`<audio autoplay src="${soundEffects[sound]}" ${looping ? "loop" : ""}></audio>`);
         if(!looping)
         {
             element.onended = function()

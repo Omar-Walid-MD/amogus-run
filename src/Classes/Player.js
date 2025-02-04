@@ -277,7 +277,7 @@ export default class Player extends GameObject
     
             if(rayCallback.hasHit())
             {
-                this.game.playSound("hit.mp3");
+                this.game.playSound("hit");
                 if(i === 0)
                 {
                     this.lose();
@@ -322,7 +322,7 @@ export default class Player extends GameObject
         {
             this.characterController.jump();
             this.crossfadeToAction("jump");
-            this.game.playSound("jump.wav");
+            this.game.playSound("jump");
             setTimeout(() => {
                 this.jumping = true;
             }, 50);
@@ -337,7 +337,7 @@ export default class Player extends GameObject
             this.sweeping = true;
             this.colliderSwapState = 1;
             this.crossfadeToAction("sweep",0.1);
-            this.game.playSound("sweep.mp3");
+            this.game.playSound("sweep");
             if(this.jumping)
             {
                 this.velocity.y = -0.25;
@@ -363,7 +363,7 @@ export default class Player extends GameObject
             this.currentLane += direction;
             this.crossfadeToAction(direction===1 ? "right" : "left",0);
 
-            this.game.playSound("jump.wav");
+            this.game.playSound("jump");
         }
         setTimeout(() => {
             this.game.impostor.move(this.currentLane);
@@ -423,12 +423,12 @@ export default class Player extends GameObject
     {
         this.game.impostor.startRun();
         this.crossfadeToAction("start");
-        this.game.playSound("gasp.mp3");
+        this.game.playSound("gasp");
 
         setTimeout(() => {
             this.setWalkDirection(1,0,0);
             this.crossfadeToAction("walk",0.75);
-            // this.walkingAudio = this.game.playSound("walk.mp3",true);
+            // this.walkingAudio = this.game.playSound("walk",true);
         }, this.game.startDelay);
     }
 
