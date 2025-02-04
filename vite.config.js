@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     nodePolyfills(), // Add this plugin for polyfills like fs
   ],
-  base: "",
+  base: "amogus-run",
   resolve: {
     alias: {
       path: 'path-browserify', // Alias path to the browser version
