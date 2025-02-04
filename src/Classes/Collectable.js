@@ -8,6 +8,7 @@ export default class Collectable extends GameObject
     constructor(game,xPosition)
     {
         super(game);
+        this.className = "Collectable";
         
         const lanePosition = [-1,0,1][Math.floor(Math.random()*3)]*5;
 

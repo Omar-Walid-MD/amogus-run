@@ -8,6 +8,7 @@ export default class Player extends GameObject
     constructor(game)
     {
         super(game);
+        this.className = "Player";
 
         this.size = [0.5,1];
 

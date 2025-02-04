@@ -8,6 +8,7 @@ export default class Platform extends GameObject
     constructor(game,platformSize)
     {
         super(game);
+        this.className = "Platform";
 
         this.size = [platformSize,this.game.platformHeight,20];
         

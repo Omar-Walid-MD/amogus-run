@@ -5,9 +5,7 @@ export default class GameObject
     {
         this.game = game;
         this.alive = true;
-
         this.mesh;
-
         this.game.gameObjects.push(this);
     }
     
@@ -19,7 +17,7 @@ export default class GameObject
             shader.uniforms.curveStrength = { value: 0.25 }; // Adjust curve strength
             shader.uniforms.curveAmount = { value: 0.05 }; // Adjust curvature amount
 
-            if(this.constructor.name === "Collectable") shader.uniforms.curveAmount.value = 0.055;
+            if(this.className === "Collectable") shader.uniforms.curveAmount.value = 0.055;
 
             shader.vertexShader = shader.vertexShader.replace(
                 `#include <common>`,
@@ -56,7 +54,7 @@ export default class GameObject
 
         if(true)
         {
-            if(this.constructor.name === "Obstacle" || this.constructor.name === "Platform" || this.constructor.name === "Collectable")
+            if(this.className === "Obstacle" || this.className === "Platform" || this.className === "Collectable")
             {
                 this.mesh.traverse((child) => {
                     if(child.isMesh)

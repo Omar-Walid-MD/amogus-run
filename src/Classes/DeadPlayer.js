@@ -7,6 +7,7 @@ export default class DeadPlayer extends GameObject
     constructor(game)
     {
         super(game);
+        this.className = "DeadPlayer";
 
         this.mesh = game.models.dead.clone();
         this.mesh.scale.set(0.35,0.35,0.35);

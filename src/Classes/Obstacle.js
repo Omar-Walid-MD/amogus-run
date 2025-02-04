@@ -8,6 +8,7 @@ export default class Obstacle extends GameObject
     {
 
         super(game);
+        this.className = "Obstacle";
         
         this.mesh = game.models[obstacleName].clone();
 

@@ -8,6 +8,7 @@ export default class Impostor extends GameObject
     constructor(game)
     {
         super(game);
+        this.className = "Impostor";
 
         this.size = [0.5,1];
 
