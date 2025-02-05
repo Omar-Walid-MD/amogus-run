@@ -12,8 +12,6 @@ function RunningGameInterface({refs})
                     <h3 className='fw-semibold px-2 m-0' ref={refs.coinCountRef}>0</h3>
                     <img src={coinImage} style={{height:"60px"}} />
                 </div>
-
-                <p className='debug' ref={refs.debugLabelRef}></p>
             </div>
         </>
     );

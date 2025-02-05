@@ -65,6 +65,8 @@ export default class Impostor extends GameObject
         this.maxRunTicks = 10*60;
         this.runTicks = this.maxRunTicks;
         this.behindThreshold = 10;
+
+        this.updateRateTicks = 200;
     
     }
 
@@ -151,45 +153,29 @@ export default class Impostor extends GameObject
 
         this.origin = this.getOrigin();
         const playerOrigin = this.game.player.origin;
-        const lanePosition = this.currentLane*this.laneSpace;
-
-        let newZVelocity = 0;
-
-        if(this.strafing)
-        {
-            if(Math.abs(lanePosition-this.origin.z)>0.1)
-            {
-                if(this.game.currentState === this.game.states.RUNNING)
-                {
-                    const zDirection = Math.sign(lanePosition-this.origin.z)*this.speed;
-                    newZVelocity = zDirection;
-                }
-            }
-            else
-            {
-                this.setOrigin(this.origin.x,this.origin.y,lanePosition);
-                this.velocity.z = 0;
-                this.strafing = false;
-                if(this.onGround())
-                {
-                    this.crossfadeToAction("walk",0.5);
-                }
-            }
-
-            this.velocity.z = THREE.MathUtils.lerp(this.velocity.z,newZVelocity,0.6);
-        }
-        else
-        {
-            this.velocity.z = 0;
-        }
-
-
-        this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
-        );
 
         if(this.game.currentState === this.game.states.RUNNING)
         {
+            const lanePosition = this.currentLane*this.laneSpace;
+
+            if(this.strafing)
+            {
+                if(this.origin.z*this.strafeDirection >= Math.abs(lanePosition))
+                {
+                    this.setOrigin(this.origin.x,this.origin.y,lanePosition);
+                    this.velocity.z = 0;
+                    this.strafing = false;
+                    this.lastLane = this.currentLane;
+                    this.updateWalkDirection();
+                    this.strafeDirection = 0;
+                    if(this.onGround())
+                    {
+                        this.crossfadeToAction("walk");
+                    }
+                }
+    
+            }
+
             this.handleObstacles();
 
             if(this.onGround())
@@ -239,16 +225,18 @@ export default class Impostor extends GameObject
                 if(playerOrigin.x - this.origin.x > this.behindThreshold)
                 {
                     this.currentState = this.states.BEHIND;
+                    this.updateWalkDirection();
                 }
             }
             else if(this.currentState === this.states.ACCELERATING)
             {
-                this.velocity.x = THREE.MathUtils.lerp(this.velocity.x,0.65,0.1);
 
-                if(playerOrigin.x - this.origin.x <= 4)
+                if(playerOrigin.x - this.origin.x <= 3)
                 {
                     this.currentState = this.states.RUNNING;
                     this.runTicks = this.maxRunTicks;
+                    this.velocity.x = 0.5;
+                    this.updateWalkDirection();
                 }
             }
 
@@ -286,6 +274,13 @@ export default class Impostor extends GameObject
         this.mixer.update(1.5*this.game.rate*this.game.deltaTime);
 
         this.updateMeshPosition();
+
+        if(this.updateRateTicks === 0)
+        {
+            this.updateWalkDirection();
+            this.updateRateTicks = 200;
+        }
+        else this.updateRateTicks--;
 
     }
 
@@ -326,7 +321,7 @@ export default class Impostor extends GameObject
         const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
         const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1,this.origin.z);
 
-        const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
+        const rayCallback = new ammo.ClosestRayResultCallback(rayStart, rayEnd);
 
         this.game.physicsWorld.rayTest(rayStart, rayEnd, rayCallback);
 
@@ -356,7 +351,7 @@ export default class Impostor extends GameObject
             const rayStart = new ammo.btVector3(this.origin.x+start.x,this.origin.y+start.y,this.origin.z+start.z);
             const rayEnd = new ammo.btVector3(this.origin.x+end.x,this.origin.y+end.y,this.origin.z+end.z);
     
-            const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
+            const rayCallback = new ammo.ClosestRayResultCallback(rayStart, rayEnd);
     
             this.game.physicsWorld.rayTest(rayStart, rayEnd, rayCallback);
 
@@ -380,11 +375,11 @@ export default class Impostor extends GameObject
 
     }
 
-    setWalkDirection(x,y,z)
+    updateWalkDirection()
     {
-        x *= 0.5;
-        z *= 0.5;
-        this.velocity = {x,y,z};
+        this.characterController.setWalkDirection(
+            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
+        );
     }
 
     jump()
@@ -413,6 +408,8 @@ export default class Impostor extends GameObject
                 this.velocity.y = -0.25;
             }
 
+            this.updateWalkDirection();
+
             setTimeout(() => {
                 this.sweeping = false;
                 this.colliderSwapState = 2;
@@ -420,17 +417,24 @@ export default class Impostor extends GameObject
                 {
                     this.crossfadeToAction("walk"); 
                     this.velocity.y = 0;
+                    this.updateWalkDirection();
                 }
             }, 750);
         }
     }
 
-    move(currentLane)
+    move(newLane)
     {
+        if(this.currentState === this.states.BEHIND) return;
+
         this.strafing = true;
-        const direction = currentLane - this.currentLane;
-        this.crossfadeToAction(direction===1 ? "right" : "left",0);
-        this.currentLane = currentLane;
+        this.strafeDirection = newLane - this.currentLane;
+        this.crossfadeToAction(this.strafeDirection===1 ? "right" : "left",0);
+        this.currentLane = newLane;
+        this.velocity.z = this.strafeDirection*0.35;
+        this.updateWalkDirection();
+
+        console.log("moved to",newLane);
     }
 
     crossfadeToAction(animationName, duration = 0.1)
@@ -462,6 +466,7 @@ export default class Impostor extends GameObject
             }
 
             this.colliderSwapState = 0;
+            this.updateWalkDirection();
         }
     }
 
@@ -469,10 +474,12 @@ export default class Impostor extends GameObject
     {
         this.currentState = this.states.STARTING;
         this.velocity.x = 0.35;
+        this.updateWalkDirection();
         this.crossfadeToAction("start-impostor");
         setTimeout(() => {
             this.updateMeshPosition();
-            this.setWalkDirection(1,0,0);
+            this.velocity.x = 0.5;
+            this.updateWalkDirection();
             this.crossfadeToAction("walk",1);
             this.currentState = this.states.ACCELERATING;
         }, this.game.startDelay);
@@ -488,6 +495,8 @@ export default class Impostor extends GameObject
                 this.setOrigin(playerOrigin.x-this.behindThreshold,playerOrigin.y,playerOrigin.z);
             }
             this.currentState = this.states.ACCELERATING;
+            this.velocity.x = 0.65;
+            this.updateWalkDirection();
         }
     }
 

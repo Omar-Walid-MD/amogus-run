@@ -64,6 +64,8 @@ export default class Game
         this.maxScoreTicks = 10;
         this.scoreTicks = this.maxScoreTicks;
         this.startDelay = 750;
+
+        this.debugCounter = 0;
         
         this.endScreenShown = false;
     }
@@ -76,7 +78,7 @@ export default class Game
         this.scene.fog = new THREE.Fog(bgColor, 80, 120);
 
         this.camera = new THREE.PerspectiveCamera(
-            75,this.width / this.height, 0.5, 200
+            75,this.width / this.height, 0.5, 400
         );
         this.camera.rotateY(-Math.PI/2);
         this.camera.rotateX(-Math.PI/8);
@@ -88,7 +90,7 @@ export default class Game
 
         this.renderer.toneMapping = THREE.NeutralToneMapping;
 
-        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.enabled = !this.isMobile;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         this.renderer.shadowMap.bias = 0.001;
@@ -358,11 +360,18 @@ export default class Game
         }
 
         this.gameObjects = this.gameObjects.filter((g) => g.alive);
+
+        if(this.debugCounter === 0)
+        {
+            if(this.refs.debugLabelRef?.current) this.refs.debugLabelRef.current.textContent = `FPS: ${(1/this.deltaTime).toFixed(2)}`;
+            this.debugCounter = 20;
+        }
+        else this.debugCounter--;
       
         if(this.currentState === this.states.RUNNING)
         {
             this.updateCameraPosition();
-            this.updateLightPosition();
+            if(!this.isMobile) this.updateLightPosition();
 
             if(this.rate < 2)
             {
@@ -383,8 +392,6 @@ export default class Game
                 this.score = parseInt(this.player.origin.x/10)*10;
                 this.updateScore();
                 this.scoreTicks = this.maxScoreTicks;
-
-                // if(this.refs.debugLabelRef?.current) this.refs.debugLabelRef.current.textContent = (this.deltaTime * 10).toFixed(3);
             }
         }
 
@@ -395,11 +402,6 @@ export default class Game
 
         if(!this.isMobile) this.updateBackground();
 
-        // for (let i = 0; i < 2000; i++)
-        // {
-        //     console.log("When the amogus is sus",this.deltaTime);
-            
-        // }
             
         this.physicsWorld.stepSimulation(this.deltaTime,5,1/60);
         this.renderer.render(this.scene, this.camera);

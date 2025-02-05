@@ -168,6 +168,7 @@ function GameWindow() {
                     <RunningGameInterface refs={refs}/>
                 }
 
+                    <p className='debug position-absolute top-0 text-info fw-semibold' ref={refs.debugLabelRef}></p>
                 </div>
             </div>
         }

@@ -56,7 +56,18 @@ export default class Player extends GameObject
 
         this.canHit = true;
 
+        this.hitRayPositions = [
+            [{x:-0.5,y:0.5,z:0},{x:1,y:0.5,z:0}],
+            [{x:0,y:0.5,z:0},{x:0,y:0.5,z:0.8}],
+            [{x:0,y:0.5,z:0},{x:0,y:0.5,z:-0.8}],
+        ];
+
+        this.strafeDirection = 0;
+        this.lost = false;
+
         this.crossfadeToAction("idle");
+
+        this.updateRateTicks = 200;
     
     }
 
@@ -133,7 +144,6 @@ export default class Player extends GameObject
         })
     }
 
-
     update()
     {        
         this.origin = this.getOrigin();
@@ -142,73 +152,68 @@ export default class Player extends GameObject
         {
             const lanePosition = this.currentLane*this.laneSpace;
 
-            let newZVelocity = 0;
-
             if(this.strafing)
             {
-                if(Math.abs(lanePosition-this.origin.z)>0.1)
-                {
-                    const zDirection = Math.sign(lanePosition-this.origin.z)*this.speed;
-                    newZVelocity = zDirection;
-                }
-                else
+                if(this.origin.z*this.strafeDirection >= Math.abs(lanePosition))
                 {
                     this.setOrigin(this.origin.x,this.origin.y,lanePosition);
                     this.velocity.z = 0;
                     this.strafing = false;
                     this.lastLane = this.currentLane;
+                    this.updateWalkDirection();
+                    this.strafeDirection = 0;
                     if(this.onGround())
                     {
                         this.crossfadeToAction("walk");
                     }
                 }
 
-                this.velocity.z = THREE.MathUtils.lerp(this.velocity.z,newZVelocity,0.6);
-            }
-            else
-            {
-                this.velocity.z = 0;
             }
 
-            
-            this.checkHit();
-
-            if(this.onGround())
+            if(!this.lost)
             {
-                if(!this.animations["walk"].isRunning() && !this.animations["start"].isRunning())
+                this.checkHit();
+    
+                if(this.onGround())
                 {
-                    if(!this.sweeping && !this.strafing)
+                    if(!this.animations["walk"].isRunning() && !this.animations["start"].isRunning())
                     {
-                        this.crossfadeToAction("walk");
+                        if(!this.sweeping && !this.strafing)
+                        {
+                            this.crossfadeToAction("walk");
+                        }
                     }
+                    if(this.jumping)
+                    {
+                        this.jumping = false;
+                        if(this.sweeping)
+                        {
+                            this.velocity.y = 0;
+                        }
+                    }
+    
+                    if(this.walkingAudio && this.walkingAudio.paused && !this.strafing) this.walkingAudio.play();
+    
                 }
-                if(this.jumping)
+                else
                 {
-                    this.jumping = false;
-                    if(this.sweeping)
-                    {
-                        this.velocity.y = 0;
-                    }
+                    if(this.walkingAudio && !this.walkingAudio.paused) this.walkingAudio.pause();
                 }
-
-                if(this.walkingAudio && this.walkingAudio.paused && !this.strafing) this.walkingAudio.play();
-
-            }
-            else
-            {
-                if(this.walkingAudio && !this.walkingAudio.paused) this.walkingAudio.pause();
             }
         }
-
-        this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
-        );
         
         this.updateMeshPosition();
 
         this.mixer.update(1.5*this.game.rate*this.game.deltaTime);
 
         if(this.walkingAudio) this.walkingAudio.playbackRate = this.game.rate + 0.2;
+
+        if(this.updateRateTicks === 0)
+        {
+            this.updateWalkDirection();
+            this.updateRateTicks = 200;
+        }
+        else this.updateRateTicks--;
 
 
     }
@@ -246,7 +251,7 @@ export default class Player extends GameObject
         const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
         const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1.5,this.origin.z);
 
-        const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
+        const rayCallback = new ammo.ClosestRayResultCallback(rayStart, rayEnd);
 
         this.game.physicsWorld.rayTest(rayStart, rayEnd, rayCallback);
 
@@ -259,15 +264,9 @@ export default class Player extends GameObject
         
         const ammo = this.game.ammo;
 
-        const rayPositions = [
-            [{x:-0.5,y:0.5,z:0},{x:1,y:0.5,z:0}],
-            [{x:0,y:0.5,z:0},{x:0,y:0.5,z:0.8}],
-            [{x:0,y:0.5,z:0},{x:0,y:0.5,z:-0.8}],
-        ]
-
-        for(let i = 0; i < rayPositions.length; i++)
+        for(let i = 0; i < this.hitRayPositions.length; i++)
         {
-            const rayPosition = rayPositions[i];
+            const rayPosition = this.hitRayPositions[i];
 
             const start = rayPosition[0];
             const end = rayPosition[1];
@@ -275,10 +274,11 @@ export default class Player extends GameObject
             const rayStart = new ammo.btVector3(this.origin.x+start.x,this.origin.y+start.y,this.origin.z+start.z);
             const rayEnd = new ammo.btVector3(this.origin.x+end.x,this.origin.y+end.y,this.origin.z+end.z);
     
-            const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
+            const rayCallback = new ammo.ClosestRayResultCallback(rayStart, rayEnd);
     
             this.game.physicsWorld.rayTest(rayStart, rayEnd, rayCallback,collisionGroup.RAY,collisionGroup.OBSTACLE);
     
+
             if(rayCallback.hasHit())
             {
                 this.game.playSound("hit");
@@ -289,13 +289,17 @@ export default class Player extends GameObject
                 }
                 else
                 {
-                    this.move(this.lastLane - this.currentLane);
-                    this.currentLane = this.lastLane;
                     
                     if(this.game.impostor.currentState !== this.game.impostor.states.BEHIND)
                     {
                         this.lose();
                         return;
+                    }
+                    else
+                    {
+                        this.strafing = false;
+                        this.move(this.lastLane - this.currentLane);
+                        this.currentLane = this.lastLane;
                     }
                 }
                 this.game.impostor.approachPlayer();
@@ -306,18 +310,20 @@ export default class Player extends GameObject
                 }, 100);
 
                 return;
-
             }
+
+            if(!this.strafing) break;
+
         }
 
 
     }
 
-    setWalkDirection(x,y,z)
+    updateWalkDirection()
     {
-        x *= 0.5;
-        z *= 0.5;
-        this.velocity = {x,y,z};
+        this.characterController.setWalkDirection(
+            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
+        );
     }
 
     jump()
@@ -347,6 +353,8 @@ export default class Player extends GameObject
                 this.velocity.y = -0.25;
             }
 
+            this.updateWalkDirection();
+
             setTimeout(() => {
                 this.sweeping = false;
                 this.colliderSwapState = 2;
@@ -354,6 +362,7 @@ export default class Player extends GameObject
                 {
                     this.crossfadeToAction("walk"); 
                     this.velocity.y = 0;
+                    this.updateWalkDirection();
                 }
             }, 750);
         }
@@ -369,10 +378,15 @@ export default class Player extends GameObject
 
             if(!this.jumping) this.game.playSound("jump");
             this.walkingAudio.pause();
+
+            this.strafeDirection = direction;
+            this.velocity.z = direction*0.35
+            this.updateWalkDirection();
+            
+            setTimeout(() => {
+                this.game.impostor.move(this.currentLane);
+            }, 50);
         }
-        setTimeout(() => {
-            this.game.impostor.move(this.currentLane);
-        }, 50);
     }
 
     crossfadeToAction(animationName, duration = 0.1)
@@ -421,6 +435,7 @@ export default class Player extends GameObject
             }
 
             this.colliderSwapState = 0;
+            this.updateWalkDirection();
         }
     }
 
@@ -431,7 +446,8 @@ export default class Player extends GameObject
         this.game.playSound("gasp");
 
         setTimeout(() => {
-            this.setWalkDirection(1,0,0);
+            this.velocity.x = 0.5;
+            this.updateWalkDirection();
             this.crossfadeToAction("walk",0.75);
             this.walkingAudio = this.game.playSound("walk",true);
         }, this.game.startDelay);
@@ -444,12 +460,14 @@ export default class Player extends GameObject
         this.game.impostor.approachPlayer();
         this.velocity.x = 0;
         this.velocity.z = 0;
+        this.updateWalkDirection();
         this.crossfadeToAction("hit");
         this.walkingAudio.remove();
         if(this.sweeping)
         {
             this.colliderSwapState = 2;
         }
+        this.lost = true;
     }
 
     remove()

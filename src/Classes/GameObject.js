@@ -49,7 +49,7 @@ export default class GameObject
         };
 
       
-        this.setShadow(true);
+        this.setShadow(!this.game.isMobile);
 
         if(true)
         {
