@@ -34,10 +34,4 @@ export default class Platform extends GameObject
         this.addPhysicsObject(shape,0,1,collisionGroup.PLATFORM);
 
     }
-
-
-    update()
-    {
-        super.update();
-    }
 }

@@ -29,11 +29,14 @@ export default class Game
         this.textures = textures;
         this.shapes = {};
 
+        this.isMobile = document.body.classList.contains("mobile");
+
         this.refs = refs;
 
         this.abortController = new AbortController();
 
         this.gameObjects = [];
+        this.timers = [];
         this.active = true;
         this.requestReposition = false;
         this.platformHeight = 2;
@@ -54,7 +57,6 @@ export default class Game
         this.score = 0;
         this.coinCount = 0;
 
-        this.lastTime = 0;
         this.deltaTime = 0;
 
         this.tweenGroup = new Group();
@@ -74,21 +76,14 @@ export default class Game
         this.scene.fog = new THREE.Fog(bgColor, 80, 120);
 
         this.camera = new THREE.PerspectiveCamera(
-            75, // Field of view
-            this.width / this.height, // Aspect ratio
-            0.5, // Near clipping plane
-            500 // Far clipping plane
+            75,this.width / this.height, 0.5, 200
         );
         this.camera.rotateY(-Math.PI/2);
         this.camera.rotateX(-Math.PI/8);
 
         this.renderer = new THREE.WebGLRenderer({ canvas:this.canvas, antialias: true });
-        let pixelRatio = 0.9;
-        if(this.width >= 1000)
-        {
-            pixelRatio = 0.7;
-        }
-        this.renderer.setPixelRatio(pixelRatio);
+        
+        this.renderer.setPixelRatio(window.devicePixelRatio/2);
         this.renderer.setSize(this.width, this.height);
 
         this.renderer.toneMapping = THREE.NeutralToneMapping;
@@ -107,7 +102,7 @@ export default class Game
 
         this.scene.add(this.directionalLight);
 
-        this.initBackground();
+        if(!this.isMobile) this.initBackground();
 
         this.endScreenOverlay = new THREE.Mesh(
             new THREE.PlaneGeometry(5,5),
@@ -148,44 +143,99 @@ export default class Game
 
     initEvents()
     {
-        window.addEventListener("keydown",(e)=>{
-            if(this.currentState === this.states.RUNNING)
-            {
-                switch (e.code)
-                {
-                    case keys.space:
-                        this.player.jump();
-                        break;
-                    case keys.a:
-                        this.player.move(-1);
-                        break;
-                    case keys.d:
-                        this.player.move(1);
-                        break;
-                    case keys.s:
-                        this.player.sweep();
-                        break;
-                
-                    default:
-                        break;
-                }
-            }
-            else if(this.currentState === this.states.STARTING)
-            {
-                if(e.code===keys.space)
-                {
-                    this.startRun();
-                }
-            }
+        if(document.body.classList.contains("mobile"))
+        {
+            window.addEventListener("touchstart",(e)=>{
 
-        },{signal:this.abortController.signal});
+                if(this.currentState !== this.states.RUNNING) return;
+
+                this.touchStartCoods = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+            },{signal:this.abortController.signal});
+
+            window.addEventListener("touchend",(e)=>{
+
+                if(this.currentState !== this.states.RUNNING) return;
+
+                const touchEndCoords = {
+                    x: e.changedTouches[0].clientX,
+                    y: e.changedTouches[0].clientY
+                };
+
+                const touchDistance = {
+                    x: touchEndCoords.x - this.touchStartCoods.x,
+                    y: touchEndCoords.y - this.touchStartCoods.y
+                };
+
+                if(Math.abs(touchDistance.x) < 50)
+                {
+                    touchDistance.x = 0;
+                }
+                else if(Math.abs(touchDistance.y) < 50)
+                {
+                    touchDistance.y = 0;
+                }
+
+                const k = Math.abs(touchDistance.x) > Math.abs(touchDistance.y) ? ["x","y"] : ["y","x"];
+                const funcs = {
+                    x: [()=>this.player.move(1),()=>this.player.move(-1)],
+                    y: [()=>this.player.sweep(),()=>this.player.jump()]
+                }
+                
+                if(touchDistance[k[0]] > 0) funcs[k[0]][0]();
+                else if(touchDistance[k[0]] < 0) funcs[k[0]][1]();
+                else if(touchDistance[k[1]] > 0) funcs[k[1]][0]();
+                else if(touchDistance[k[1]] < 0) funcs[k[1]][1]();
+
+
+            },{signal:this.abortController.signal});
+        }
+        else
+        {
+            window.addEventListener("keydown",(e)=>{
+                if(this.currentState === this.states.RUNNING)
+                {
+                    switch (e.code)
+                    {
+                        case keys.space:
+                            this.player.jump();
+                            break;
+                        case keys.a:
+                            this.player.move(-1);
+                            break;
+                        case keys.d:
+                            this.player.move(1);
+                            break;
+                        case keys.s:
+                            this.player.sweep();
+                            break;
+                    
+                        default:
+                            break;
+                    }
+                }
+                else if(this.currentState === this.states.STARTING)
+                {
+                    if(e.code===keys.space)
+                    {
+                        this.startRun();
+                    }
+                }
+    
+            },{signal:this.abortController.signal});
+        }
     }
 
     initColliderShapes()
     {
-        Object.entries(this.models).forEach(([modelName,model])=>{
-            if(model.isObject3D) this.shapes[modelName] = this.getTriangleMesh(model);
-        });
+        const modelEntries = Object.entries(this.models);
+        for (let i = 0; i < modelEntries.length; i++)
+        {
+            const [modelName,model] = modelEntries[i];
+            if(model.isObject3D && modelName.includes("collider")) this.shapes[modelName] = this.getTriangleMesh(model);   
+        }
     }
 
     initBackground()
@@ -208,10 +258,7 @@ export default class Game
                 emissive: new THREE.Color("white"),
                 emissiveIntensity: i<2 ? 1 : 0.15,
                 fog: false
-            });
-
-            // if(i === 2) this.backgroundMesh.children[0].material[i].opacity = 0;
-            
+            });            
             
         }
 
@@ -288,24 +335,28 @@ export default class Game
     end = () =>
     {
         this.active = false;
-        this.gameObjects.forEach((gameObject)=>{
-            gameObject.remove();
-        });
+        for (let i = 0; i < this.gameObjects.length; i++)
+        {
+            this.gameObjects[i].remove();   
+        }
         this.gameObjects = [];
     }    
 
     loop = (now) =>
     {
-        this.deltaTime = now - this.lastTime;
-        this.lastTime = now;
 
         if(!this.active) return;
+
+        this.deltaTime = this.clock.getDelta();
         
         requestAnimationFrame(this.loop);
         
-        [...this.gameObjects].forEach((gameObject)=>{
-            gameObject.update();
-        });        
+        const currentGameObjects = [...this.gameObjects];
+        for (let i = 0; i < currentGameObjects.length; i++)
+        {
+            currentGameObjects[i].update();  
+        }
+
         this.gameObjects = this.gameObjects.filter((g) => g.alive);
       
         if(this.currentState === this.states.RUNNING)
@@ -323,22 +374,34 @@ export default class Game
                 console.log("reached max speed");
             }
 
-            if(this.scoreTicks)
+            if(this.scoreTicks > 0)
             {
-                this.scoreTicks--;
+                this.scoreTicks -= this.deltaTime * 60;
             }
             else
             {
-                const r = parseInt((this.rate - this.defaultRate) / 0.2) + 1;
-                this.score += r;
+                this.score = parseInt(this.player.origin.x/10)*10;
                 this.updateScore();
                 this.scoreTicks = this.maxScoreTicks;
+
+                // if(this.refs.debugLabelRef?.current) this.refs.debugLabelRef.current.textContent = (this.deltaTime * 10).toFixed(3);
             }
         }
 
-        this.updateBackground();
+        for (let i = 0; i < this.timers.length; i++)
+        {
+            this.timers[i].execute(); 
+        }
+
+        if(!this.isMobile) this.updateBackground();
+
+        // for (let i = 0; i < 2000; i++)
+        // {
+        //     console.log("When the amogus is sus",this.deltaTime);
             
-        this.physicsWorld.stepSimulation(this.clock.getDelta(), 0);
+        // }
+            
+        this.physicsWorld.stepSimulation(this.deltaTime,5,1/60);
         this.renderer.render(this.scene, this.camera);
         this.tweenGroup.update(now,false);
 
@@ -358,7 +421,7 @@ export default class Game
     {
         if(this.cameraLerpRate < 1)
         {
-            this.cameraLerpRate = THREE.MathUtils.lerp(this.cameraLerpRate,1,0.005);
+            this.cameraLerpRate = THREE.MathUtils.lerp(this.cameraLerpRate,1,this.deltaTime/2);
         }
         this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x,this.player.mesh.position.x - 10,this.cameraLerpRate);
         this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y,this.player.mesh.position.y + 6,this.cameraLerpRate/4);
@@ -377,7 +440,7 @@ export default class Game
         this.backgroundMesh.position.set(this.camera.position.x,10,0);
         for (let i = 0; i < 3; i++)
         {
-            this.backgroundMesh.children[0].material[i].map.offset.x += 0.005 / (i+1);
+            this.backgroundMesh.children[0].material[i].map.offset.x += 0.005 / (i+1) * this.deltaTime * 20;
         }
     }
 
@@ -513,7 +576,6 @@ export default class Game
     {
         this.currentState = gameState;
         this.refs.setGameState(gameState);
-        // console.log(this.refs.gameStateRef.current)
     }
 
 

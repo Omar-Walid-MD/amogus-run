@@ -8,12 +8,21 @@
   font-family: "Exo 2", sans-serif;
 }
 
+html,
+body {
+    overscroll-behavior-y: contain;
+}
+
 .page-container
 {
   min-height: 100vh;
   overflow: hidden;
   background-color: black;
+}
 
+.mobile .page-container
+{
+  min-height: 92.5vh;
 }
 
 .game-modal

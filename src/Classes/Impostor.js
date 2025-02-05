@@ -144,33 +144,30 @@ export default class Impostor extends GameObject
 
     update()
     {        
-
         if(this.currentState === this.states.BEHIND)
         {
             return;
         }
 
-        const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
+        this.origin = this.getOrigin();
+        const playerOrigin = this.game.player.origin;
         const lanePosition = this.currentLane*this.laneSpace;
 
         let newZVelocity = 0;
 
-        
-
         if(this.strafing)
         {
-            if(Math.abs(lanePosition-origin.z())>0.1)
+            if(Math.abs(lanePosition-this.origin.z)>0.1)
             {
                 if(this.game.currentState === this.game.states.RUNNING)
                 {
-                    const zDirection = Math.sign(lanePosition-origin.z())*this.speed;
+                    const zDirection = Math.sign(lanePosition-this.origin.z)*this.speed;
                     newZVelocity = zDirection;
                 }
             }
             else
             {
-                this.setOrigin(origin.x(),origin.y(),lanePosition);
+                this.setOrigin(this.origin.x,this.origin.y,lanePosition);
                 this.velocity.z = 0;
                 this.strafing = false;
                 if(this.onGround())
@@ -225,21 +222,21 @@ export default class Impostor extends GameObject
                     this.velocity.x = 0.5;
                 }
 
-                if(this.runTicks === 0)
+                if(this.runTicks <= 0)
                 {
                     this.currentState = this.states.DECELERATING;
                     this.runTicks = this.maxRunTicks;
                 }
                 else
                 {
-                    this.runTicks--;
+                    this.runTicks -= this.game.deltaTime * 60;
                 }
             }
             else if(this.currentState === this.states.DECELERATING)
             {
                 this.velocity.x = THREE.MathUtils.lerp(this.velocity.x,0.45,0.1);
                 
-                if(this.game.player.mesh.position.x - this.mesh.position.x > this.behindThreshold)
+                if(playerOrigin.x - this.origin.x > this.behindThreshold)
                 {
                     this.currentState = this.states.BEHIND;
                 }
@@ -248,7 +245,7 @@ export default class Impostor extends GameObject
             {
                 this.velocity.x = THREE.MathUtils.lerp(this.velocity.x,0.65,0.1);
 
-                if(this.game.player.mesh.position.x - this.mesh.position.x <= 6)
+                if(playerOrigin.x - this.origin.x <= 4)
                 {
                     this.currentState = this.states.RUNNING;
                     this.runTicks = this.maxRunTicks;
@@ -258,7 +255,7 @@ export default class Impostor extends GameObject
         }
         else if(this.game.currentState === this.game.states.LOST)
         {
-            if(this.game.player.mesh.position.x - this.mesh.position.x <= 2)
+            if(playerOrigin.x - this.origin.x <= 2)
             {
                 this.velocity.x = 0;
                 this.game.showEndScreen();
@@ -277,18 +274,16 @@ export default class Impostor extends GameObject
         {
             if(this.currentState === this.states.STARTING)
             {
-                if(this.game.player.mesh.position.x - this.mesh.position.x <= 3)
+                if(playerOrigin.x - this.origin.x <= 3)
                 {
                     this.velocity.x = 0;
-                }
-                else
-                {
-                    this.velocity.x = THREE.MathUtils.lerp(this.velocity.x,0,0.025);
+                    this.setOrigin(playerOrigin.x-3,this.origin.y,this.origin.z);
+                    this.updateMeshPosition();
                 }
             }
         }
 
-        this.mixer.update(0.025*this.game.rate);
+        this.mixer.update(1.5*this.game.rate*this.game.deltaTime);
 
         this.updateMeshPosition();
 
@@ -313,12 +308,12 @@ export default class Impostor extends GameObject
         const origin = transform.getOrigin();
         const position = new THREE.Vector3(origin.x(), origin.y(), origin.z());
 
-        const rotation = transform.getRotation();
-        const quaternion = new THREE.Quaternion(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-
+        // const rotation = transform.getRotation();
+        // const quaternion = new THREE.Quaternion(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+        
         this.mesh.position.copy(position);
         if(this.sweeping) this.mesh.position.y += 0.5;
-        this.mesh.quaternion.copy(quaternion);
+        // this.mesh.quaternion.copy(quaternion);
 
     }
 
@@ -326,10 +321,10 @@ export default class Impostor extends GameObject
     {
         const ammo = this.game.ammo;
         const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
+        // const origin = transform.getOrigin();
 
-        const rayStart = new ammo.btVector3(origin.x(),origin.y(),origin.z());
-        const rayEnd = new ammo.btVector3(origin.x(),origin.y()-1,origin.z());
+        const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
+        const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1,this.origin.z);
 
         const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
 
@@ -341,8 +336,8 @@ export default class Impostor extends GameObject
     handleObstacles()
     {
         const ammo = this.game.ammo;
-        const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
+        // const transform = this.ghostObject.getWorldTransform();
+        // const origin = transform.getOrigin();
 
         const rayPositions = [
             [{x:-0.5,y:0.5,z:0},{x:3,y:0.5,z:0}], //high ray
@@ -358,8 +353,8 @@ export default class Impostor extends GameObject
             const start = rayPosition[0];
             const end = rayPosition[1];
 
-            const rayStart = new ammo.btVector3(origin.x()+start.x,origin.y()+start.y,origin.z()+start.z);
-            const rayEnd = new ammo.btVector3(origin.x()+end.x,origin.y()+end.y,origin.z()+end.z);
+            const rayStart = new ammo.btVector3(this.origin.x+start.x,this.origin.y+start.y,this.origin.z+start.z);
+            const rayEnd = new ammo.btVector3(this.origin.x+end.x,this.origin.y+end.y,this.origin.z+end.z);
     
             const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
     

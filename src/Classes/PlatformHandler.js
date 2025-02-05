@@ -24,16 +24,20 @@ export default class PlatformHandler extends GameObject
 
     update()
     {
-        if(this.game.player.mesh?.position.x > this.platforms[1].mesh.position.x)
+        if(this.game.currentState === this.game.states.RUNNING)
         {
-            this.platforms[0].remove();
-
-            this.platforms = [this.platforms[1]];
-            this.platforms.push(new Platform(this.game,this.platformSize));
-
-            const p = this.platforms[0].mesh.position;
-
-            this.platforms[1].setOrigin(p.x+this.platformSize,p.y,p.z);
+            if(this.game.player.mesh?.position.x > this.platforms[1].mesh.position.x)
+            {
+                this.platforms.reverse();
+                const p = this.platforms[0].mesh.position;
+                this.platforms[1].setOrigin(p.x+this.platformSize,p.y,p.z);
+                // this.platforms[0].remove();
+    
+                // this.platforms = [this.platforms[1]];
+                // this.platforms.push(new Platform(this.game,this.platformSize));
+    
+    
+            }
         }
     }
 }

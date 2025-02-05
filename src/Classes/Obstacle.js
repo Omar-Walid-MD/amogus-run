@@ -4,11 +4,14 @@ import { collisionGroup } from '../data';
 
 export default class Obstacle extends GameObject
 {
-    constructor(game,obstacleName,xPosition)
+    constructor(game,spawner,obstacleName,xPosition)
     {
 
         super(game);
         this.className = "Obstacle";
+
+        this.spawner = spawner;
+        this.obstacleName = obstacleName;
         
         this.mesh = game.models[obstacleName].clone();
 
@@ -31,28 +34,39 @@ export default class Obstacle extends GameObject
 
 
         const boundingBox = new THREE.Box3().setFromObject(this.mesh);
-        const height = boundingBox.max.y - boundingBox.min.y;
+        this.height = boundingBox.max.y - boundingBox.min.y;
 
-        const lanePosition = [-1,0,1][Math.floor(Math.random()*3)]*5;
-        this.mesh.position.set(xPosition,this.game.platformHeight/2+height/2,lanePosition);
+
         this.mesh.rotation.set(0,-Math.PI,0,"XYZ");
 
         const shape = new this.game.ammo.btBvhTriangleMeshShape(this.game.shapes[obstacleName+"-collider"], true, true);
         
         const group = ["stand","barrel"].includes(obstacleName) ? (collisionGroup.OBSTACLE | collisionGroup.OBSTACLE_DODGE) : (collisionGroup.OBSTACLE | collisionGroup.OBSTACLE_COLLIDE);
         this.addPhysicsObject(shape,0,1,group,-1);
+
+        this.setLanePosition(xPosition);
         
     }
 
     update()
     {
-        super.update();
-        if(!this.game.running || !this.mesh) return;
-        
-        if(this.game.player.mesh?.position.x - this.mesh.position.x > 20)
+        if(!this.mesh.visible) return;
+
+        if(this.game.currentState === this.game.states.RUNNING)
         {
-            this.remove();
+            if(this.game.player.mesh?.position.x - this.mesh.position.x > 20)
+            {
+                this.mesh.visible = false;
+                this.spawner.hiddenObstacles[this.obstacleName].push(this);
+            }
         }
 
+    }
+
+    setLanePosition(xPosition)
+    {
+        const lanePosition = [-1,0,1][Math.floor(Math.random()*3)]*5;
+        this.setOrigin(xPosition,this.game.platformHeight/2+this.height/2,lanePosition);
+        this.updatePhysics();
     }
 }

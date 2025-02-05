@@ -37,35 +37,34 @@ export default class Collectable extends GameObject
 
     update()
     {
-        super.update();
-
         this.animate();
         
-        if(this.game.player.mesh?.position.x - this.mesh.position.x > 20)
+        if(this.game.currentState === this.game.states.RUNNING)
         {
-            this.remove();
+            if(this.game.player.mesh?.position.x - this.mesh.position.x > 20)
+            {
+                this.remove();
+            }
+    
+            if(this.mesh.position.distanceTo(this.game.player.mesh.position) < 1 && !this.collected)
+            {
+                this.collected = true;
+                this.game.coinCount++;
+                this.game.updateCoinCount();
+                // const newScale = 1;
+                // this.game.tweenGroup.add(new Tween(this.mesh.scale,true).to({x:newScale,y:newScale,z:newScale},150).easing(Easing.Cubic.Out));
+                this.game.tweenGroup.add(new Tween(this.mesh.position,true).to({y:this.mesh.position.y+2},150).easing(Easing.Cubic.Out));
+                this.game.tweenGroup.add(new Tween(this.mesh.children[0].material,true).to({opacity:0},150).onComplete(()=>this.remove()));
+    
+                this.game.playSound("coin");
+            }
         }
-
-        if(this.mesh.position.distanceTo(this.game.player.mesh.position) < 1 && !this.collected)
-        {
-            this.collected = true;
-            this.game.coinCount++;
-            this.game.updateCoinCount();
-            // const newScale = 1;
-            // this.game.tweenGroup.add(new Tween(this.mesh.scale,true).to({x:newScale,y:newScale,z:newScale},150).easing(Easing.Cubic.Out));
-            this.game.tweenGroup.add(new Tween(this.mesh.position,true).to({y:this.mesh.position.y+2},150).easing(Easing.Cubic.Out));
-            this.game.tweenGroup.add(new Tween(this.mesh.children[0].material,true).to({opacity:0},150).onComplete(()=>this.remove()));
-
-            this.game.playSound("coin");
-        }
-
-
     }
 
     animate()
     {
-        this.mesh.rotation.y -= Math.PI/180;
-        this.delta = (this.delta+2)%360;
+        this.mesh.rotation.y -= Math.PI/180 * 100 * this.game.deltaTime;
+        this.delta = (this.delta+100*this.game.deltaTime)%360;
         if(!this.collected)
         {
             const newY = this.origin.y + Math.sin(this.delta*Math.PI/180)*0.35;

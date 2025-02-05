@@ -19,10 +19,13 @@ function GameWindow() {
 
     const [gameState,setGameState] = useState(-1);
 
+    const [isMobile,setIsMobile] = useState(false);
+
 
     const refs = {
         scoreLabelRef: useRef(),
         coinCountRef: useRef(),
+        debugLabelRef: useRef(),
         audioContainerRef: useRef(),
         setGameState
     }
@@ -109,6 +112,21 @@ function GameWindow() {
 
     }, [loading]);
 
+    useEffect(()=>{
+
+        ["Android","Linux armv7l","iPhone","iPod","iPad","BlackBerry"].forEach((mobilePlatform)=>{
+            if(navigator.userAgent.includes(mobilePlatform))
+            {
+                document.body.classList.add("mobile");
+                setIsMobile(true);
+                return;
+            }
+        })
+
+    },[]);
+        
+
+
 
 
     return (
@@ -123,20 +141,27 @@ function GameWindow() {
                 {
                     gameState === -1 ?
                     <>
-                        <h1 className='text-white fw-semibold position-absolute top-0 mt-5 game-title'
+                        <h1 className='text-white fw-semibold position-absolute top-0 mt-5 game-title text-center'
                         >Amogus Run!</h1>
+                        
                         <div className='position-absolute bottom-0 mb-4 text-center'>
                             <Button className='start-btn fs-2 mb-2'
                             style={{width:"200px"}}
                             onClick={game?.startRun}>Start!</Button>
-                            <p className='text-primary fs-5 fw-semibold'>(Or Press Space to Run!)</p>
+                            {
+                                !isMobile &&
+                                <p className='text-primary fs-5 fw-semibold'>(Or Press Space to Run!)</p>
+                            }
                         </div>
-                        <div className='position-absolute bottom-0 m-3 fw-bold' style={{right:0}}>
-                            <p className='m-0'>A to LEFT</p>
-                            <p className='m-0'>D to RIGHT</p>
-                            <p className='m-0'>S to SWEEP</p>
-                            <p className='m-0'>SPACE to JUMP</p>
-                        </div>
+                        {
+                            !isMobile &&
+                            <div className='position-absolute bottom-0 m-3 fw-bold' style={{right:0}}>
+                                <p className='m-0'>A to LEFT</p>
+                                <p className='m-0'>D to RIGHT</p>
+                                <p className='m-0'>S to SWEEP</p>
+                                <p className='m-0'>SPACE to JUMP</p>
+                            </div>
+                        }
                     </>
                     :
                     gameState === 1 &&

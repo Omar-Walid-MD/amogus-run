@@ -12,6 +12,9 @@ export default class ObstacleSpawner extends GameObject
         this.playerGap = 150;
         this.lastPlayerPos = 0;
 
+        this.hiddenObstacles = {};
+        this.obstacleNames.forEach((n) => {this.hiddenObstacles[n] = [];});
+
         const limit = (this.playerGap/this.obstacleGap) - 1;
 
         for (let i = 0; i < limit; i++)
@@ -33,9 +36,20 @@ export default class ObstacleSpawner extends GameObject
         }
     }
 
-    spawnObstacle(zPosition)
+    spawnObstacle(xPosition)
     {
         const obstacleName = this.obstacleNames[Math.floor(Math.random()*this.obstacleNames.length)];
-        new Obstacle(this.game,obstacleName,zPosition);
+
+        if(this.hiddenObstacles[obstacleName].length > 0)
+        {
+            const obstacle = this.hiddenObstacles[obstacleName].pop();
+            obstacle.mesh.visible = true;
+            obstacle.setLanePosition(xPosition);
+        }
+        else
+        {
+            new Obstacle(this.game,this,obstacleName,xPosition);
+        }
+
     }
 }

@@ -11,7 +11,6 @@ export default class GameObject
     
     addMesh()
     {
-
         const onBeforeCompile = (shader) =>
         {                
             shader.uniforms.curveStrength = { value: 0.25 }; // Adjust curve strength
@@ -125,7 +124,6 @@ export default class GameObject
     update()
     {
         if(!this.alive) return;
-        if(this.hasPhysics) this.updatePhysics();
     }
 
     updatePhysics()
@@ -138,7 +136,6 @@ export default class GameObject
             let p = this.game.physicsTransform.getOrigin();
             let q = this.game.physicsTransform.getRotation();
             const quaternion = new THREE.Quaternion(q.x(), q.y(), q.z(), q.w());
-            
             
             this.mesh.position.set(p.x(), p.y(), p.z());
             this.mesh.quaternion.copy(quaternion);

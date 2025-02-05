@@ -136,46 +136,41 @@ export default class Player extends GameObject
 
     update()
     {        
-        const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
-        const lanePosition = this.currentLane*this.laneSpace;
-
-        let newZVelocity = 0;
-
-        if(this.strafing && this.game.currentState === this.game.states.RUNNING)
+        this.origin = this.getOrigin();
+        
+        if(this.game.currentState === this.game.states.RUNNING)
         {
-            if(Math.abs(lanePosition-origin.z())>0.1)
+            const lanePosition = this.currentLane*this.laneSpace;
+
+            let newZVelocity = 0;
+
+            if(this.strafing)
             {
-                const zDirection = Math.sign(lanePosition-origin.z())*this.speed;
-                newZVelocity = zDirection;
+                if(Math.abs(lanePosition-this.origin.z)>0.1)
+                {
+                    const zDirection = Math.sign(lanePosition-this.origin.z)*this.speed;
+                    newZVelocity = zDirection;
+                }
+                else
+                {
+                    this.setOrigin(this.origin.x,this.origin.y,lanePosition);
+                    this.velocity.z = 0;
+                    this.strafing = false;
+                    this.lastLane = this.currentLane;
+                    if(this.onGround())
+                    {
+                        this.crossfadeToAction("walk");
+                    }
+                }
+
+                this.velocity.z = THREE.MathUtils.lerp(this.velocity.z,newZVelocity,0.6);
             }
             else
             {
-                this.setOrigin(origin.x(),origin.y(),lanePosition);
                 this.velocity.z = 0;
-                this.strafing = false;
-                this.lastLane = this.currentLane;
-                if(this.onGround())
-                {
-                    this.crossfadeToAction("walk",0.5);
-                }
             }
 
-            this.velocity.z = THREE.MathUtils.lerp(this.velocity.z,newZVelocity,0.6);
-        }
-        else
-        {
-            this.velocity.z = 0;
-        }
-
-
-
-        this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
-        );
-
-        if(this.game.currentState === this.game.states.RUNNING)
-        {
+            
             this.checkHit();
 
             if(this.onGround())
@@ -184,7 +179,7 @@ export default class Player extends GameObject
                 {
                     if(!this.sweeping && !this.strafing)
                     {
-                        this.crossfadeToAction("walk",0.2);
+                        this.crossfadeToAction("walk");
                     }
                 }
                 if(this.jumping)
@@ -195,12 +190,26 @@ export default class Player extends GameObject
                         this.velocity.y = 0;
                     }
                 }
+
+                if(this.walkingAudio && this.walkingAudio.paused && !this.strafing) this.walkingAudio.play();
+
+            }
+            else
+            {
+                if(this.walkingAudio && !this.walkingAudio.paused) this.walkingAudio.pause();
             }
         }
 
-        this.mixer.update(0.025*this.game.rate);
-
+        this.characterController.setWalkDirection(
+            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
+        );
+        
         this.updateMeshPosition();
+
+        this.mixer.update(1.5*this.game.rate*this.game.deltaTime);
+
+        if(this.walkingAudio) this.walkingAudio.playbackRate = this.game.rate + 0.2;
+
 
     }
 
@@ -220,15 +229,12 @@ export default class Player extends GameObject
     {
         const transform = this.ghostObject.getWorldTransform();
 
-        const origin = transform.getOrigin();
-        const position = new THREE.Vector3(origin.x(), origin.y(), origin.z());
+        // const origin = transform.getOrigin();
+        // const position = new THREE.Vector3(origin.x(), origin.y(), origin.z());
 
-        const rotation = transform.getRotation();
-        const quaternion = new THREE.Quaternion(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-
-        this.mesh.position.copy(position);
+        this.mesh.position.copy(this.origin);
         if(this.sweeping) this.mesh.position.y += 0.5;
-        this.mesh.quaternion.copy(quaternion);
+        // this.mesh.quaternion.copy(quaternion);
 
     }
 
@@ -236,10 +242,9 @@ export default class Player extends GameObject
     {
         const ammo = this.game.ammo;
         const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
 
-        const rayStart = new ammo.btVector3(origin.x(),origin.y(),origin.z());
-        const rayEnd = new ammo.btVector3(origin.x(),origin.y()-1.5,origin.z());
+        const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
+        const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1.5,this.origin.z);
 
         const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
 
@@ -253,8 +258,6 @@ export default class Player extends GameObject
         if(!this.canHit) return;
         
         const ammo = this.game.ammo;
-        const transform = this.ghostObject.getWorldTransform();
-        const origin = transform.getOrigin();
 
         const rayPositions = [
             [{x:-0.5,y:0.5,z:0},{x:1,y:0.5,z:0}],
@@ -269,8 +272,8 @@ export default class Player extends GameObject
             const start = rayPosition[0];
             const end = rayPosition[1];
 
-            const rayStart = new ammo.btVector3(origin.x()+start.x,origin.y()+start.y,origin.z()+start.z);
-            const rayEnd = new ammo.btVector3(origin.x()+end.x,origin.y()+end.y,origin.z()+end.z);
+            const rayStart = new ammo.btVector3(this.origin.x+start.x,this.origin.y+start.y,this.origin.z+start.z);
+            const rayEnd = new ammo.btVector3(this.origin.x+end.x,this.origin.y+end.y,this.origin.z+end.z);
     
             const rayCallback = new ammo.AllHitsRayResultCallback(rayStart, rayEnd);
     
@@ -364,7 +367,8 @@ export default class Player extends GameObject
             this.currentLane += direction;
             this.crossfadeToAction(direction===1 ? "right" : "left",0);
 
-            this.game.playSound("jump");
+            if(!this.jumping) this.game.playSound("jump");
+            this.walkingAudio.pause();
         }
         setTimeout(() => {
             this.game.impostor.move(this.currentLane);
@@ -429,7 +433,7 @@ export default class Player extends GameObject
         setTimeout(() => {
             this.setWalkDirection(1,0,0);
             this.crossfadeToAction("walk",0.75);
-            // this.walkingAudio = this.game.playSound("walk",true);
+            this.walkingAudio = this.game.playSound("walk",true);
         }, this.game.startDelay);
     }
 
@@ -439,7 +443,9 @@ export default class Player extends GameObject
         this.game.impostor.setCollider(1);
         this.game.impostor.approachPlayer();
         this.velocity.x = 0;
+        this.velocity.z = 0;
         this.crossfadeToAction("hit");
+        this.walkingAudio.remove();
         if(this.sweeping)
         {
             this.colliderSwapState = 2;
