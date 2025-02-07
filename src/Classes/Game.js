@@ -50,8 +50,6 @@ export default class Game
             LOST: 2
         };
 
-        this.setGameState(this.states.STARTING);
-
         this.defaultRate = 0.8;
         this.rate = this.defaultRate;
         this.score = 0;
@@ -85,10 +83,11 @@ export default class Game
 
         this.renderer = new THREE.WebGLRenderer({ canvas:this.canvas, antialias: true });
         
-        this.renderer.setPixelRatio(window.devicePixelRatio/2);
+        this.renderer.setPixelRatio(window.devicePixelRatio/(this.isMobile ? 2 : 1.5));
         this.renderer.setSize(this.width, this.height);
 
         this.renderer.toneMapping = THREE.NeutralToneMapping;
+        this.renderer.toneMappingExposure = 1.25;
 
         this.renderer.shadowMap.enabled = !this.isMobile;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -138,6 +137,7 @@ export default class Game
             this.initEvents();
 
             this.start();
+            this.loop();
         });
         
 
@@ -288,18 +288,17 @@ export default class Game
     restart = () =>
     {
         this.end();
-        setTimeout(() => {
-            this.start();
-        }, 50);
+        this.start();
     }
 
     start = () =>
     {        
+        this.setGameState(this.states.STARTING);
+
         this.score = 0;
         this.coinCount = 0;
         this.rate = this.defaultRate;
         this.active = true;
-        this.setGameState(this.states.STARTING);
         this.player = new Player(this);
         this.impostor = new Impostor(this);
         this.deadPlayer = new DeadPlayer(this);
@@ -313,7 +312,6 @@ export default class Game
 
         this.updateLightPosition();
 
-        this.loop();
     }
 
     startRun = () =>
@@ -326,6 +324,9 @@ export default class Game
         setTimeout(() => {
             this.setGameState(this.states.RUNNING);
             this.tweenGroup.add(new Tween(this.camera.rotation,true).to({y:-Math.PI/2.5},1000).easing(Easing.Cubic.Out));
+        
+            this.player.startRunAfterDelay();
+            this.impostor.startRunAfterDelay();
         }, this.startDelay);
     }
 
@@ -342,6 +343,8 @@ export default class Game
             this.gameObjects[i].remove();   
         }
         this.gameObjects = [];
+
+        this.tweenGroup.removeAll();
     }    
 
     loop = (now) =>

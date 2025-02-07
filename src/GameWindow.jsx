@@ -17,7 +17,7 @@ function GameWindow() {
     const [models,setModels] = useState({});
     const [textures,setTextures] = useState({});
 
-    const [gameState,setGameState] = useState(-1);
+    const [gameState,setGameState] = useState(null);
 
     const [isMobile,setIsMobile] = useState(false);
 
@@ -33,6 +33,51 @@ function GameWindow() {
 
     async function loadModelsAndTextures()
     {
+        function getOnBeforeCompile(texture)
+        {
+            const curveAmountValue = texture === "coin.png" ? 0.055 : 0.05;
+            return (shader) =>
+            {                
+                shader.uniforms.curveStrength = { value: 0.25 }; // Adjust curve strength
+                shader.uniforms.curveAmount = { value: curveAmountValue }; // Adjust curvature amount
+        
+                shader.vertexShader = shader.vertexShader.replace(
+                    `#include <common>`,
+                    `#include <common>
+                    uniform float curveStrength;
+                    uniform float curveAmount;
+    
+                    `
+                );
+    
+                shader.vertexShader = shader.vertexShader.replace(
+                    `#include <begin_vertex>`,
+                    `#include <begin_vertex>
+    
+                    vec4 viewPosition = modelViewMatrix * vec4(transformed, 1.0);
+                    vec4 cameraPosition = viewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+                    vec3 meshPosition = transformed.xyz;
+    
+                    float curvatureThreshold = 50.0;
+                    float distance = length(viewPosition.xyz); // Compute the distance in view space
+                    float curve = 0.0;
+                    if (distance > curvatureThreshold) {
+                        curve = curveStrength * pow(abs(viewPosition.z) * curveAmount, 2.0);
+                        curve *= abs(distance - curvatureThreshold)/(70.0);
+                    }
+    
+                    transformed.y += curve;
+                    `
+                );
+            };
+        }
+
+        const tempTextures = {};
+        Object.entries(textureImports).forEach(([textureName,texturePath])=>{
+            const texture = new TextureLoader().load(texturePath);
+            tempTextures[textureName] = texture;
+        });
+        setTextures(tempTextures);
 
         let loadedModelsCount = 0;
 
@@ -43,32 +88,61 @@ function GameWindow() {
             loadedModelsCount++;
             if(loadedModelsCount === Object.keys(modelImports).length)
             {
-                setLoading(false);
+                setTimeout(() => {
+                    setLoading(false);
+                }, 1000);
             }
         }
 
 
         Object.entries(modelImports).forEach(([modelName,data])=>{
-
-            
+    
             const [name,type] = modelName.split(".");
 
             if(data.type==="obj")
             {
                 const materialLoader = new MTLLoader();
 
-                materialLoader.load(data.material,(materials)=>{
+                if(data.material)
+                {
+                    materialLoader.load(data.material,(materials)=>{
+    
+                        materials.preload();
+    
+                        if(data.texture)
+                        {
+                            Object.values(materials.materials).forEach((mat)=>{
+                                mat.map = tempTextures[data.texture];
 
-                    materials.preload();
+                                if(true)
+                                {
+                                    if(data.texture === "coin.png" || data.texture === "obstacles.png" || data.texture === "corridor.png")
+                                    {
+                                        mat.onBeforeCompile = getOnBeforeCompile(data.texture);
+                                    }
+                                }
+                            });
 
+                        }
+    
+                        const objMaterial = new OBJLoader();
+    
+                        objMaterial.setMaterials(materials);
+    
+                        objMaterial.load(data.model,(loadedModel)=>{
+                            loadModel(name,loadedModel);
+                        });
+                    });
+                }
+                else
+                {
                     const objMaterial = new OBJLoader();
-
-                    objMaterial.setMaterials(materials);
-
+    
                     objMaterial.load(data.model,(loadedModel)=>{
                         loadModel(name,loadedModel);
                     });
-                });
+                }
+
             }
             else if(data.type==="glb")
             {
@@ -84,11 +158,6 @@ function GameWindow() {
 
         });
         
-        Object.entries(textureImports).forEach(([textureName,texturePath])=>{
-            
-            const texture = new TextureLoader().load(texturePath);
-            setTextures(t => ({...t,[textureName]:texture}));
-        })
     }
 
     useEffect(() => {
@@ -125,16 +194,21 @@ function GameWindow() {
 
     },[]);
         
-
+    console.log(loading || gameState === null);
 
 
 
     return (
-        <div className='page-container w-100 h-100 d-flex justify-content-center align-items-center m-0'>
+        <div className='page-container position-relative w-100 h-100 d-flex justify-content-center align-items-center m-0'>
         {
-            loading ?
-            <h1 className='text-white'>Loading...</h1>
-            :
+            
+            (loading || gameState === null) &&
+            <div className='title-screen position-absolute w-100 d-flex justify-content-center align-items-center'>
+                <h1 className='position-absolute text-white bottom-0 m-5'>Loading...</h1>
+            </div>
+        }
+        {
+            !loading &&
             <div className='position-relative' style={{width:width+"px",height:height+"px"}}>
                 <canvas ref={canvasRef} width={width} height={height}></canvas>
                 <div className="position-absolute d-flex justify-content-center align-items-center" style={{inset:0}}>
@@ -168,7 +242,7 @@ function GameWindow() {
                     <RunningGameInterface refs={refs}/>
                 }
 
-                    <p className='debug position-absolute top-0 text-info fw-semibold' ref={refs.debugLabelRef}></p>
+                    <p className='debug position-absolute top-0 text-info fw-semibold m-2' ref={refs.debugLabelRef} style={{left:0}}></p>
                 </div>
             </div>
         }

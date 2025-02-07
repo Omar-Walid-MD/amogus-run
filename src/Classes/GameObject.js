@@ -11,67 +11,7 @@ export default class GameObject
     
     addMesh()
     {
-        const onBeforeCompile = (shader) =>
-        {                
-            shader.uniforms.curveStrength = { value: 0.25 }; // Adjust curve strength
-            shader.uniforms.curveAmount = { value: 0.05 }; // Adjust curvature amount
-
-            if(this.className === "Collectable") shader.uniforms.curveAmount.value = 0.055;
-
-            shader.vertexShader = shader.vertexShader.replace(
-                `#include <common>`,
-                `#include <common>
-                uniform float curveStrength;
-                uniform float curveAmount;
-
-                `
-            );
-
-            shader.vertexShader = shader.vertexShader.replace(
-                `#include <begin_vertex>`,
-                `#include <begin_vertex>
-
-                vec4 viewPosition = modelViewMatrix * vec4(transformed, 1.0);
-                vec4 cameraPosition = viewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-                vec3 meshPosition = transformed.xyz;
-
-                float curvatureThreshold = 50.0;
-                float distance = length(viewPosition.xyz); // Compute the distance in view space
-                float curve = 0.0;
-                if (distance > curvatureThreshold) {
-                    curve = curveStrength * pow(abs(viewPosition.z) * curveAmount, 2.0);
-                    curve *= abs(distance - curvatureThreshold)/(70.0);
-                }
-
-                transformed.y += curve;
-                `
-            );
-        };
-
-      
         this.setShadow(!this.game.isMobile);
-
-        if(true)
-        {
-            if(this.className === "Obstacle" || this.className === "Platform" || this.className === "Collectable")
-            {
-                this.mesh.traverse((child) => {
-                    if(child.isMesh)
-                    {
-                        if(child.material.length)
-                        {
-                            child.material.forEach((m)=>{
-                                m.onBeforeCompile = onBeforeCompile;
-                            });
-                        }
-                        else child.material.onBeforeCompile = onBeforeCompile;
-    
-    
-                        // child.customDepthMaterial = customDepthMaterial;
-                    }
-                });
-            }
-        }
 
         this.game.scene.add(this.mesh);
     }
@@ -206,11 +146,15 @@ export default class GameObject
             this.mesh.userData.physicsBody = null;
             this.game.scene.remove(this.mesh);
             if(this.mesh.geometry) this.mesh.geometry.dispose();
-            if(this.mesh.material) {
-                if (Array.isArray(this.mesh.material)) {
-                this.mesh.material.forEach(mat => mat.dispose());
-                } else {
-                this.mesh.material.dispose();
+            if(this.mesh.material)
+            {
+                if(Array.isArray(this.mesh.material))
+                {
+                    this.mesh.material.forEach(mat => mat.dispose());
+                }
+                else
+                {
+                    this.mesh.material.dispose();
                 }
             }
         }

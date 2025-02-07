@@ -13,15 +13,16 @@ export default class Collectable extends GameObject
         const lanePosition = [-1,0,1][Math.floor(Math.random()*3)]*5;
 
         this.mesh = this.game.models.coin.clone();
-        this.mesh.children[0].material = this.mesh.children[0].material.clone();
-        this.mesh.children[0].material.map = this.game.textures["coin.png"];
         this.addMesh();
 
         this.origin = {x:xPosition,y:50,z:lanePosition};
         this.mesh.position.set(this.origin.x,this.origin.y,this.origin.z);
         this.mesh.scale.set(0.75,0.75,0.75);
 
+        const onBeforeCompile = this.mesh.children[0].material.onBeforeCompile;
+        this.mesh.children[0].material = this.mesh.children[0].material.clone();
         const m = this.mesh.children[0].material;
+        m.onBeforeCompile = onBeforeCompile;
         m.emissiveMap = this.game.textures["coin-emission.png"].clone();
         m.emissive = new THREE.Color("gold");
         m.emissiveIntensity = 0.75;

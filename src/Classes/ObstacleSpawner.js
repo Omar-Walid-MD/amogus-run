@@ -1,3 +1,4 @@
+import { obstacleRows } from "../data";
 import GameObject from "./GameObject"
 import Obstacle from "./Obstacle";
 
@@ -6,11 +7,12 @@ export default class ObstacleSpawner extends GameObject
     constructor(game)
     {
         super(game);
-        this.obstacleNames = ["stand","crate","ramp","barrel"];
+        this.obstacleNames = ["crate","ramp","barrel","stand"];
 
-        this.obstacleGap = 25;
+        this.obstacleGap = 40;
         this.playerGap = 150;
         this.lastPlayerPos = 0;
+        this.laneSpace = 5;
 
         this.hiddenObstacles = {};
         this.obstacleNames.forEach((n) => {this.hiddenObstacles[n] = [];});
@@ -19,8 +21,8 @@ export default class ObstacleSpawner extends GameObject
 
         for (let i = 0; i < limit; i++)
         {
-            const pos = this.obstacleGap*2 + i*this.obstacleGap;
-            this.spawnObstacle(pos);
+            const pos = this.obstacleGap + i*this.obstacleGap;
+            this.spawnObstacleRow(pos);
         }
     }
 
@@ -32,24 +34,47 @@ export default class ObstacleSpawner extends GameObject
         {
             this.lastPlayerPos = Math.abs(this.game.player.mesh.position.x);
 
-            this.spawnObstacle(this.lastPlayerPos+this.playerGap);
+            this.spawnObstacleRow(this.lastPlayerPos+this.playerGap);
         }
     }
 
-    spawnObstacle(xPosition)
+    spawnObstacleRow(x)
     {
-        const obstacleName = this.obstacleNames[Math.floor(Math.random()*this.obstacleNames.length)];
+        let row = this.shuffleRow(obstacleRows[Math.floor(Math.random()*obstacleRows.length)]);
+
+        for (let i = 0; i < row.length; i++)
+        {
+            const obstacleIndex = row[i];
+            const z = -this.laneSpace + this.laneSpace*i;
+            this.spawnObstacle(obstacleIndex,x,z)
+        }
+    }
+
+    spawnObstacle(obstacleIndex,x,z)
+    {
+        if(obstacleIndex === -1) return;
+
+        const obstacleName = this.obstacleNames[obstacleIndex];
 
         if(this.hiddenObstacles[obstacleName].length > 0)
         {
             const obstacle = this.hiddenObstacles[obstacleName].pop();
             obstacle.mesh.visible = true;
-            obstacle.setLanePosition(xPosition);
+            obstacle.setLanePosition(x,z);
         }
         else
         {
-            new Obstacle(this.game,this,obstacleName,xPosition);
+            new Obstacle(this.game,this,obstacleName,x,z);
         }
 
     }
+
+    shuffleRow(row)
+    { 
+        for (let i = row.length - 1; i > 0; i--) { 
+          const j = Math.floor(Math.random() * (i + 1)); 
+          [row[i], row[j]] = [row[j], row[i]]; 
+        } 
+        return row; 
+      }; 
 }

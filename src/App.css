@@ -20,6 +20,28 @@ body {
   background-color: black;
 }
 
+.title-screen
+{
+  height: 100vh !important;
+  background: linear-gradient(transparent 60%,rgba(0, 0, 0, 0.5)), url("./assets/images/title-screen.png");
+  background-size: cover;
+  background-position: right;
+  background-repeat: no-repeat;
+}
+
+.title-screen h1
+{
+  font-size: 4rem;
+  text-shadow: 5px 5px 0 black;
+}
+
+.game-title
+{
+  font-size: 5rem;
+  text-shadow: 5px 5px 0 black;
+}
+
+
 .mobile .page-container
 {
   min-height: 92.5vh;
@@ -82,10 +104,4 @@ body {
   --bg-color: #e83131;
   --light-color: #ed6161;
   --dark-color: #bd2a2a;
-}
-
-.game-title
-{
-  font-size: 5rem;
-  text-shadow: 5px 5px 0 black;
 }

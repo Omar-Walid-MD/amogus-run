@@ -40,7 +40,7 @@ export default class Player extends GameObject
 
         this.initCharacterController();
 
-        this.speed = 0.3;
+        this.speed = 0.5;
         this.currentLane = 0;
         this.lastLane = 0;
         this.laneSpace = 5;
@@ -157,10 +157,9 @@ export default class Player extends GameObject
                 if(this.origin.z*this.strafeDirection >= Math.abs(lanePosition))
                 {
                     this.setOrigin(this.origin.x,this.origin.y,lanePosition);
-                    this.velocity.z = 0;
                     this.strafing = false;
                     this.lastLane = this.currentLane;
-                    this.updateWalkDirection();
+                    this.updateWalkDirection({z:0});
                     this.strafeDirection = 0;
                     if(this.onGround())
                     {
@@ -200,6 +199,14 @@ export default class Player extends GameObject
                     if(this.walkingAudio && !this.walkingAudio.paused) this.walkingAudio.pause();
                 }
             }
+
+            if(this.updateRateTicks === 0)
+            {
+                this.updateWalkDirection({x:this.speed*this.game.rate});
+                this.updateRateTicks = 200;
+            }
+            else this.updateRateTicks--;
+        
         }
         
         this.updateMeshPosition();
@@ -207,14 +214,6 @@ export default class Player extends GameObject
         this.mixer.update(1.5*this.game.rate*this.game.deltaTime);
 
         if(this.walkingAudio) this.walkingAudio.playbackRate = this.game.rate + 0.2;
-
-        if(this.updateRateTicks === 0)
-        {
-            this.updateWalkDirection();
-            this.updateRateTicks = 200;
-        }
-        else this.updateRateTicks--;
-
 
     }
 
@@ -319,10 +318,14 @@ export default class Player extends GameObject
 
     }
 
-    updateWalkDirection()
-    {
+    updateWalkDirection({x,y,z})
+    {        
+        if(x !== undefined) this.velocity.x = x;
+        if(y !== undefined) this.velocity.y = y;
+        if(z !== undefined) this.velocity.z = z;
+        
         this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
+            new this.game.ammo.btVector3(this.velocity.x,this.velocity.y,this.velocity.z)
         );
     }
 
@@ -348,21 +351,16 @@ export default class Player extends GameObject
             this.colliderSwapState = 1;
             this.crossfadeToAction("sweep",0.1);
             this.game.playSound("sweep");
-            if(this.jumping)
-            {
-                this.velocity.y = -0.25;
-            }
 
-            this.updateWalkDirection();
+            this.updateWalkDirection({y:-0.5});
 
             setTimeout(() => {
                 this.sweeping = false;
                 this.colliderSwapState = 2;
                 if(this.game.currentState === this.game.states.RUNNING)
                 {
-                    this.crossfadeToAction("walk"); 
-                    this.velocity.y = 0;
-                    this.updateWalkDirection();
+                    this.crossfadeToAction("walk",0.25); 
+                    this.updateWalkDirection({y:0});
                 }
             }, 750);
         }
@@ -380,8 +378,7 @@ export default class Player extends GameObject
             this.walkingAudio.pause();
 
             this.strafeDirection = direction;
-            this.velocity.z = direction*0.35
-            this.updateWalkDirection();
+            this.updateWalkDirection({z:direction*0.35});
             
             setTimeout(() => {
                 this.game.impostor.move(this.currentLane);
@@ -435,7 +432,7 @@ export default class Player extends GameObject
             }
 
             this.colliderSwapState = 0;
-            this.updateWalkDirection();
+            this.updateWalkDirection({});
         }
     }
 
@@ -444,13 +441,13 @@ export default class Player extends GameObject
         this.game.impostor.startRun();
         this.crossfadeToAction("start");
         this.game.playSound("gasp");
+    }
 
-        setTimeout(() => {
-            this.velocity.x = 0.5;
-            this.updateWalkDirection();
-            this.crossfadeToAction("walk",0.75);
-            this.walkingAudio = this.game.playSound("walk",true);
-        }, this.game.startDelay);
+    startRunAfterDelay()
+    {
+        this.updateWalkDirection({x:this.speed*this.game.rate});
+        this.crossfadeToAction("walk",0.75);
+        this.walkingAudio = this.game.playSound("walk",true);
     }
 
     lose()
@@ -458,9 +455,7 @@ export default class Player extends GameObject
         this.game.lose();
         this.game.impostor.setCollider(1);
         this.game.impostor.approachPlayer();
-        this.velocity.x = 0;
-        this.velocity.z = 0;
-        this.updateWalkDirection();
+        this.updateWalkDirection({x:0,z:0});
         this.crossfadeToAction("hit");
         this.walkingAudio.remove();
         if(this.sweeping)

@@ -415,7 +415,7 @@ export default class Impostor extends GameObject
                 this.colliderSwapState = 2;
                 if(this.game.currentState === this.game.states.RUNNING)
                 {
-                    this.crossfadeToAction("walk"); 
+                    this.crossfadeToAction("walk",0.25); 
                     this.velocity.y = 0;
                     this.updateWalkDirection();
                 }
@@ -433,8 +433,6 @@ export default class Impostor extends GameObject
         this.currentLane = newLane;
         this.velocity.z = this.strafeDirection*0.35;
         this.updateWalkDirection();
-
-        console.log("moved to",newLane);
     }
 
     crossfadeToAction(animationName, duration = 0.1)
@@ -476,13 +474,16 @@ export default class Impostor extends GameObject
         this.velocity.x = 0.35;
         this.updateWalkDirection();
         this.crossfadeToAction("start-impostor");
-        setTimeout(() => {
-            this.updateMeshPosition();
-            this.velocity.x = 0.5;
-            this.updateWalkDirection();
-            this.crossfadeToAction("walk",1);
-            this.currentState = this.states.ACCELERATING;
-        }, this.game.startDelay);
+    }
+
+    startRunAfterDelay()
+    {
+        this.updateMeshPosition();
+        this.velocity.x = 0.5;
+        this.updateWalkDirection();
+        this.crossfadeToAction("walk",1);
+        this.currentState = this.states.ACCELERATING;
+
     }
 
     approachPlayer()

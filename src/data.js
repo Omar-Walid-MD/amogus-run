@@ -45,19 +45,19 @@ import hitSound from "./assets/sounds/hit.mp3";
 import jumpSound from "./assets/sounds/jump.wav";
 
 export const modelImports = {
-    "amogus.glb": { type: "glb", model: amogus },
-    "coin.obj": { type: "obj", model: coin, material: coinMtl },
-    "corridor.obj": { type: "obj", model: corridor, material: corridorMtl },
-    "crate.obj": { type: "obj", model: crate, material: crateMtl },
-    "barrel.obj": { type: "obj", model: barrel, material: barrelMtl },
-    "ramp.obj": { type: "obj", model: ramp, material: rampMtl },
-    "stand.obj": { type: "obj", model: stand, material: standMtl },
-    "corridor-collider.obj": { type: "obj", model: corridorCollider, material: corridorColliderMtl },
-    "crate-collider.obj": { type: "obj", model: crateCollider, material: crateColliderMtl },
-    "barrel-collider.obj": { type: "obj", model: barrelCollider, material: barrelColliderMtl },
-    "ramp-collider.obj": { type: "obj", model: rampCollider, material: rampColliderMtl },
-    "stand-collider.obj": { type: "obj", model: standCollider, material: standColliderMtl },
-    "space-background.obj": { type: "obj", model: spaceBackground, material: spaceBackgroundMtl },
+    "amogus.glb": { type: "glb", model: amogus, texture: "amogus.png" },
+    "coin.obj": { type: "obj", model: coin, material: coinMtl, texture: "coin.png" },
+    "corridor.obj": { type: "obj", model: corridor, material: corridorMtl, texture: "corridor.png" },
+    "crate.obj": { type: "obj", model: crate, material: crateMtl, texture: "obstacles.png" },
+    "barrel.obj": { type: "obj", model: barrel, material: barrelMtl, texture: "obstacles.png" },
+    "ramp.obj": { type: "obj", model: ramp, material: rampMtl, texture: "obstacles.png" },
+    "stand.obj": { type: "obj", model: stand, material: standMtl, texture: "obstacles.png" },
+    "corridor-collider.obj": { type: "obj", model: corridorCollider },
+    "crate-collider.obj": { type: "obj", model: crateCollider },
+    "barrel-collider.obj": { type: "obj", model: barrelCollider },
+    "ramp-collider.obj": { type: "obj", model: rampCollider },
+    "stand-collider.obj": { type: "obj", model: standCollider },
+    "space-background.obj": { type: "obj", model: spaceBackground },
     "impostor.glb": { type: "glb", model: impostor },
     "dead.obj": { type: "obj", model: dead, material: deadMtl }
 };
@@ -92,3 +92,74 @@ export const collisionGroup = {
     RAY: 64,
     IMPOSTOR_RAY: 128
 };
+
+export const obstacleCode = {
+    NONE: -1,
+    CRATE: 0,
+    RAMP: 1,
+    BARREL: 2,
+    STAND: 3,
+}
+
+export const obstacleRows = [
+    [
+        obstacleCode.CRATE,
+        obstacleCode.CRATE,
+        obstacleCode.NONE
+    ],
+    [
+        obstacleCode.CRATE,
+        obstacleCode.CRATE,
+        obstacleCode.RAMP
+    ],
+    [
+        obstacleCode.NONE,
+        obstacleCode.CRATE,
+        obstacleCode.RAMP
+    ],
+    [
+        obstacleCode.CRATE,
+        obstacleCode.CRATE,
+        obstacleCode.STAND
+    ],
+    [
+        obstacleCode.CRATE,
+        obstacleCode.CRATE,
+        obstacleCode.BARREL
+    ],
+    [
+        obstacleCode.BARREL,
+        obstacleCode.CRATE,
+        obstacleCode.BARREL
+    ],
+    [
+        obstacleCode.STAND,
+        obstacleCode.CRATE,
+        obstacleCode.STAND
+    ],
+    [
+        obstacleCode.NONE,
+        obstacleCode.NONE,
+        obstacleCode.RAMP
+    ],
+    [
+        obstacleCode.NONE,
+        obstacleCode.NONE,
+        obstacleCode.CRATE
+    ],
+    [
+        obstacleCode.STAND,
+        obstacleCode.STAND,
+        obstacleCode.STAND
+    ],
+    [
+        obstacleCode.BARREL,
+        obstacleCode.BARREL,
+        obstacleCode.BARREL
+    ],
+    [
+        obstacleCode.BARREL,
+        obstacleCode.STAND,
+        obstacleCode.BARREL
+    ]
+]

@@ -24,8 +24,6 @@ export default class Platform extends GameObject
             {
                 child.castShadow = false; 
                 child.receiveShadow = true;
-
-                child.material.map = this.game.textures["corridor.png"];
             }
         });
 
