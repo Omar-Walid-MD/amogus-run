@@ -13,13 +13,14 @@ export default class Impostor extends GameObject
         this.size = [0.5,1];
 
         const ammo = this.game.ammo;
+        this.ammoVector = new ammo.btVector3(0,0,0);
 
         this.mainColliderShape = new ammo.btCapsuleShape(0.5,1);
-        this.mainColliderTransform = new ammo.btTransform(); this.mainColliderTransform.setIdentity(); this.mainColliderTransform.setOrigin(new ammo.btVector3(0,0,0));
+        this.mainColliderTransform = new ammo.btTransform(); this.mainColliderTransform.setIdentity(); this.mainColliderTransform.setOrigin(this.getAmmoVector(0,0,0));
         
         this.sweepColliderShape = new ammo.btCapsuleShape(0.25,0.15);
         this.sweepColliderShape.setMargin(0.05);
-        this.sweepColliderTransform = new ammo.btTransform(); this.sweepColliderTransform.setIdentity(); this.sweepColliderTransform.setOrigin(new ammo.btVector3(0,0,0));
+        this.sweepColliderTransform = new ammo.btTransform(); this.sweepColliderTransform.setIdentity(); this.sweepColliderTransform.setOrigin(this.getAmmoVector(0,0,0));
 
         const gltf = game.models.impostor;
 
@@ -67,6 +68,8 @@ export default class Impostor extends GameObject
         this.behindThreshold = 10;
 
         this.updateRateTicks = 200;
+
+        this.updateWalkDirection();
     
     }
 
@@ -82,7 +85,7 @@ export default class Impostor extends GameObject
         // Transform for the ghost object
         const ghostTransform = new ammo.btTransform();
         ghostTransform.setIdentity();
-        ghostTransform.setOrigin(new ammo.btVector3(-9, 2, 0)); // Initial position of the character
+        ghostTransform.setOrigin(this.getAmmoVector(-9,2,0)); // Initial position of the character
         
         const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,0,"XYZ"));
         ghostTransform.setRotation(new ammo.btQuaternion(quaternion.x,quaternion.y,quaternion.z,quaternion.w));
@@ -222,11 +225,6 @@ export default class Impostor extends GameObject
             {
                 this.velocity.x = THREE.MathUtils.lerp(this.velocity.x,0.45,0.1);
                 
-                if(playerOrigin.x - this.origin.x > this.behindThreshold)
-                {
-                    this.currentState = this.states.BEHIND;
-                    this.updateWalkDirection();
-                }
             }
             else if(this.currentState === this.states.ACCELERATING)
             {
@@ -237,6 +235,15 @@ export default class Impostor extends GameObject
                     this.runTicks = this.maxRunTicks;
                     this.velocity.x = 0.5;
                     this.updateWalkDirection();
+                }
+            }
+
+            if(this.currentState !== this.states.BEHIND)
+            {
+                if(playerOrigin.x - this.origin.x > this.behindThreshold)
+                {
+                    this.currentState = this.states.BEHIND;
+                    this.updateWalkDirection({x:0});
                 }
             }
 
@@ -280,14 +287,14 @@ export default class Impostor extends GameObject
             this.updateWalkDirection();
             this.updateRateTicks = 200;
         }
-        else this.updateRateTicks--;
+        else this.updateRateTicks -= this.game.deltaTime * 60;
 
     }
 
     setOrigin(x,y,z)
     {
         const transform = this.ghostObject.getWorldTransform();
-        transform.setOrigin(new this.game.ammo.btVector3(x,y,z));
+        transform.setOrigin(this.getAmmoVector(x,y,z));
     }
 
     getOrigin()
@@ -303,12 +310,8 @@ export default class Impostor extends GameObject
         const origin = transform.getOrigin();
         const position = new THREE.Vector3(origin.x(), origin.y(), origin.z());
 
-        // const rotation = transform.getRotation();
-        // const quaternion = new THREE.Quaternion(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-        
         this.mesh.position.copy(position);
         if(this.sweeping) this.mesh.position.y += 0.5;
-        // this.mesh.quaternion.copy(quaternion);
 
     }
 
@@ -331,12 +334,10 @@ export default class Impostor extends GameObject
     handleObstacles()
     {
         const ammo = this.game.ammo;
-        // const transform = this.ghostObject.getWorldTransform();
-        // const origin = transform.getOrigin();
 
         const rayPositions = [
-            [{x:-0.5,y:0.5,z:0},{x:3,y:0.5,z:0}], //high ray
-            [{x:-0.5,y:-0.25,z:0},{x:3,y:-0.25,z:0}], //low ray
+            [{x:-0.5,y:0.5,z:0},{x:4,y:0.5,z:0}], //high ray
+            [{x:-0.5,y:-0.25,z:0},{x:4,y:-0.25,z:0}], //low ray
         ];
 
         const hitResults = [];
@@ -378,8 +379,9 @@ export default class Impostor extends GameObject
     updateWalkDirection()
     {
         this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
+            this.getAmmoVector(this.velocity.x*this.game.rate,this.velocity.y,this.velocity.z)
         );
+
     }
 
     jump()
@@ -478,7 +480,6 @@ export default class Impostor extends GameObject
 
     startRunAfterDelay()
     {
-        this.updateMeshPosition();
         this.velocity.x = 0.5;
         this.updateWalkDirection();
         this.crossfadeToAction("walk",1);
@@ -496,7 +497,8 @@ export default class Impostor extends GameObject
                 this.setOrigin(playerOrigin.x-this.behindThreshold,playerOrigin.y,playerOrigin.z);
             }
             this.currentState = this.states.ACCELERATING;
-            this.velocity.x = 0.65;
+            if(this.game.player.lost) this.velocity.x = 0.45 * this.game.defaultRate / this.game.rate;
+            else this.velocity.x = 0.65;
             this.updateWalkDirection();
         }
     }
@@ -523,6 +525,12 @@ export default class Impostor extends GameObject
         ammo.destroy(this.characterController);
         this.game.physicsWorld.removeCollisionObject(this.ghostObject);
         ammo.destroy(this.ghostObject);
+    }
+
+    getAmmoVector(x,y,z)
+    {
+        this.ammoVector.setValue(x,y,z);
+        return this.ammoVector;
     }
     
 }

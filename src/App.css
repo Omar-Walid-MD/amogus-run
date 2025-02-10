@@ -9,13 +9,14 @@
 }
 
 html,
-body {
+body, #root {
     overscroll-behavior-y: contain;
+    width: 100% !important;
+    height: 100% !important;  
 }
 
 .page-container
 {
-  min-height: 100vh;
   overflow: hidden;
   background-color: black;
 }
@@ -23,9 +24,9 @@ body {
 .title-screen
 {
   height: 100vh !important;
-  background: linear-gradient(transparent 60%,rgba(0, 0, 0, 0.5)), url("./assets/images/title-screen.png");
+  background: linear-gradient(transparent 60%,rgba(0, 0, 0, 0.5)), url("./assets/images/title-screen.webp"), linear-gradient(black,black);
   background-size: cover;
-  background-position: right;
+  background-position: center;
   background-repeat: no-repeat;
 }
 
@@ -39,12 +40,6 @@ body {
 {
   font-size: 5rem;
   text-shadow: 5px 5px 0 black;
-}
-
-
-.mobile .page-container
-{
-  min-height: 92.5vh;
 }
 
 .game-modal
@@ -68,6 +63,14 @@ body {
   background-color: rgba(0, 0, 0, 0.5);
   padding: 0.5rem 1rem;
   border-radius: 0.75rem 0 0 0.75rem;
+}
+
+.fps-label
+{
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+
 }
 
 .btn
@@ -94,14 +97,81 @@ body {
   animation: start-btn-animation 0.5s infinite ease-in-out;
 }
 
+.interface-container
+{
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 @keyframes start-btn-animation {
   100% {scale: 1;}
   50% {scale: 1.1;}
 }
 
-.retry-btn
+.interface-animation .up
 {
-  --bg-color: #e83131;
-  --light-color: #ed6161;
-  --dark-color: #bd2a2a;
+  transform: translateY(200%);
+}
+
+.interface-animation.show .up
+{
+  animation: interface-up 0.5s 0.75s ease-in-out forwards;
+}
+
+.interface-animation.hide .up
+{
+  animation: interface-up 0.5s 0.75s ease-in-out forwards reverse;
+}
+
+@keyframes interface-up
+{
+  0% {transform: translateY(200%);}
+  100% {transform: translateY(0%);}  
+}
+
+.interface-animation .left
+{
+  transform: translateX(200%);
+}
+
+.interface-animation.show .left
+{
+  animation: interface-left 0.5s 0.75s ease-in-out forwards;
+}
+
+.interface-animation.hide .left
+{
+  animation: interface-left 0.5s 0.75s ease-in-out forwards reverse;
+}
+
+@keyframes interface-left
+{
+  0% {transform: translateX(200%);}
+  100% {transform: translateX(0%);}  
+}
+
+
+.interface-animation .down
+{
+  transform: translateY(-200%);
+}
+
+.interface-animation.show .down
+{
+  animation: interface-down 0.5s 0.75s ease-in-out forwards;
+}
+
+.interface-animation.hide .down
+{
+  animation: interface-down 0.5s 0.75s ease-in-out forwards reverse;
+}
+
+@keyframes interface-down
+{
+  0% {transform: translateY(-200%);}
+  100% {transform: translateY(0%);}  
 }

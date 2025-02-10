@@ -29,7 +29,7 @@ export default class Platform extends GameObject
 
         const shape = new this.game.ammo.btBvhTriangleMeshShape(this.game.shapes["corridor-collider"], true, true);
 
-        this.addPhysicsObject(shape,0,1,collisionGroup.PLATFORM);
+        this.addPhysicsObject(this.mesh,shape,0,1,collisionGroup.PLATFORM);
 
     }
 }

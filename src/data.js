@@ -20,17 +20,11 @@ import crateMtl from "./assets/models/crate.mtl";
 import barrelMtl from "./assets/models/barrel.mtl";
 import rampMtl from "./assets/models/ramp.mtl";
 import standMtl from "./assets/models/stand.mtl";
-import corridorColliderMtl from "./assets/models/corridor-collider.mtl";
-import crateColliderMtl from "./assets/models/crate-collider.mtl";
-import barrelColliderMtl from "./assets/models/barrel-collider.mtl";
-import rampColliderMtl from "./assets/models/ramp-collider.mtl";
-import standColliderMtl from "./assets/models/stand-collider.mtl";
-import spaceBackgroundMtl from "./assets/models/space-background.mtl";
 import deadMtl from "./assets/models/dead.mtl";
 
 import coinTexture from "./assets/textures/coin.png";
 import coinEmission from "./assets/textures/coin-emission.png";
-import corridorTexture from "./assets/textures/corridor.png";
+import corridorTexture from "./assets/textures/corridor-game.png";
 import obstacles from "./assets/textures/obstacles.png";
 import space0 from "./assets/textures/space-0.png";
 import space1 from "./assets/textures/space-1.png";
@@ -47,7 +41,7 @@ import jumpSound from "./assets/sounds/jump.wav";
 export const modelImports = {
     "amogus.glb": { type: "glb", model: amogus, texture: "amogus.png" },
     "coin.obj": { type: "obj", model: coin, material: coinMtl, texture: "coin.png" },
-    "corridor.obj": { type: "obj", model: corridor, material: corridorMtl, texture: "corridor.png" },
+    "corridor.obj": { type: "obj", model: corridor, material: corridorMtl, texture: "corridor-game.png" },
     "crate.obj": { type: "obj", model: crate, material: crateMtl, texture: "obstacles.png" },
     "barrel.obj": { type: "obj", model: barrel, material: barrelMtl, texture: "obstacles.png" },
     "ramp.obj": { type: "obj", model: ramp, material: rampMtl, texture: "obstacles.png" },
@@ -65,7 +59,7 @@ export const modelImports = {
 export const textureImports = {
     "coin.png": coinTexture,
     "coin-emission.png": coinEmission,
-    "corridor.png": corridorTexture,
+    "corridor-game.png": corridorTexture,
     "obstacles.png": obstacles,
     "space-0.png": space0,
     "space-1.png": space1,

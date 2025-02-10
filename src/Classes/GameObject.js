@@ -30,17 +30,17 @@ export default class GameObject
         });
     }
 
-    addPhysicsObject(shape,mass=1,collisionFlag=1,group=1,mask=-1)
+    addPhysicsObject(object,shape,mass=1,collisionFlag=1,group=1,mask=-1)
     {
         this.hasPhysics = true;
         const ammo = this.game.ammo;
-        const position = this.mesh?.position || {x:0,y:0,z:0};
+        const position = object?.position || {x:0,y:0,z:0};
 
         this.transform = new ammo.btTransform();
         this.transform.setIdentity();
         this.transform.setOrigin(new ammo.btVector3(position.x,position.y,position.z));
 
-        const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(this.mesh.rotation.x,this.mesh.rotation.y,this.mesh.rotation.z));
+        const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(object.rotation.x,object.rotation.y,object.rotation.z));
         this.transform.setRotation(new ammo.btQuaternion(quaternion.x,quaternion.y,quaternion.z,quaternion.w));
         
         const motionState = new ammo.btDefaultMotionState(this.transform);
@@ -52,13 +52,9 @@ export default class GameObject
 
         this.rigidBody = new ammo.btRigidBody(rigidBodyInfo);
         this.rigidBody.setCollisionFlags(collisionFlag);
-        // this.game.physicsWorld.addCollisionObject(this.rigidBody);
         this.rigidBody.setActivationState(4);
         
-        // console.log("Created: ",this.rigidBody);
-
         this.game.physicsWorld.addRigidBody(this.rigidBody,group,mask);
-        this.mesh.userData.physicsBody = this.rigidBody;
     }
 
     update()

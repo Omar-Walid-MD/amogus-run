@@ -3,6 +3,7 @@ import Ammo from "../Ammo/ammo.js";
 import Platform from './Platform';
 import Player from './Player';
 import Obstacle from './Obstacle.js';
+import Timer from './Timer.js';
 import ObstacleSpawner from './ObstacleSpawner.js';
 import PlatformHandler from './PlatformHandler.js';
 import CollectableSpawner from './CollectableSpawner.js';
@@ -312,6 +313,11 @@ export default class Game
 
         this.updateLightPosition();
 
+        setTimeout(() => {
+            this.collectableSpawner.spawnInitial();
+            this.getTotalCoinCount();
+        }, 0);
+
     }
 
     startRun = () =>
@@ -321,13 +327,16 @@ export default class Game
         this.tweenGroup.add(new Tween(this.camera.position,true).to({x:-8,y:8,z:0},350).easing(Easing.Cubic.InOut));
         this.tweenGroup.add(new Tween(this.camera.rotation,true).to({y:-Math.PI/4},350).easing(Easing.Cubic.InOut));
 
-        setTimeout(() => {
+        const startRunAfterDelay = () => {
+            
             this.setGameState(this.states.RUNNING);
             this.tweenGroup.add(new Tween(this.camera.rotation,true).to({y:-Math.PI/2.5},1000).easing(Easing.Cubic.Out));
-        
+            
             this.player.startRunAfterDelay();
             this.impostor.startRunAfterDelay();
-        }, this.startDelay);
+        }
+        // setTimeout(startRunAfterDelay, this.startDelay);
+        new Timer(this,this.startDelay,startRunAfterDelay);
     }
 
     lose = () =>
@@ -345,6 +354,8 @@ export default class Game
         this.gameObjects = [];
 
         this.tweenGroup.removeAll();
+
+        this.updateTotalCoinCount();
     }    
 
     loop = (now) =>
@@ -366,7 +377,7 @@ export default class Game
 
         if(this.debugCounter === 0)
         {
-            if(this.refs.debugLabelRef?.current) this.refs.debugLabelRef.current.textContent = `FPS: ${(1/this.deltaTime).toFixed(2)}`;
+            if(this.refs.debugLabelRef?.current) this.refs.debugLabelRef.current.textContent = `FPS: ${parseInt(1/(this.deltaTime || 100))}`;
             this.debugCounter = 20;
         }
         else this.debugCounter--;
@@ -375,16 +386,6 @@ export default class Game
         {
             this.updateCameraPosition();
             if(!this.isMobile) this.updateLightPosition();
-
-            if(this.rate < 2)
-            {
-                this.rate += 0.00005;
-                // console.log(this.rate);
-            }
-            else
-            {
-                console.log("reached max speed");
-            }
 
             if(this.scoreTicks > 0)
             {
@@ -474,7 +475,6 @@ export default class Game
             this.directionalLight.color = new THREE.Color("red");
 
             this.playSound("dead");
-
 
             setTimeout(() => {
                 let tween = new Tween(this.camera.position,true).to({y:this.camera.position.y+5},2500);
@@ -577,6 +577,16 @@ export default class Game
         this.refs.coinCountRef.current.textContent = this.coinCount; 
     }
 
+    updateTotalCoinCount()
+    {
+        this.totalCoinCount = localStorage.setItem("amogus_run_coins",this.totalCoinCount+this.coinCount);
+    }
+
+    getTotalCoinCount()
+    {
+        this.totalCoinCount = parseInt(localStorage.getItem("amogus_run_coins") || "0");
+    }
+
     setGameState(gameState)
     {
         this.currentState = gameState;
@@ -607,6 +617,5 @@ export default class Game
         temp.innerHTML = html;
         return temp.content.firstChild;
     }
-
 
 }

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { obstacleRows } from "../data";
 import GameObject from "./GameObject"
 import Obstacle from "./Obstacle";
@@ -14,8 +15,44 @@ export default class ObstacleSpawner extends GameObject
         this.lastPlayerPos = 0;
         this.laneSpace = 5;
 
-        this.hiddenObstacles = {};
-        this.obstacleNames.forEach((n) => {this.hiddenObstacles[n] = [];});
+        this.totalInstances = 20;
+        this.obstacleInstances = {};
+        this.obstacleCounts = {};
+        this.obstacleHeights = {};
+
+        this.obstacleObjects = {};
+
+        this.obstacleNames.forEach((obstacleName)=>{
+            const obstacleModel = this.game.models[obstacleName].children[0];
+
+            this.obstacleInstances[obstacleName] = new THREE.InstancedMesh(obstacleModel.geometry,obstacleModel.material,this.totalInstances);
+            this.obstacleInstances[obstacleName].frustumCulled = false;
+            this.obstacleInstances[obstacleName].castShadow = true;
+            this.obstacleInstances[obstacleName].receiveShadow = true;
+
+            this.obstacleCounts[obstacleName] = 0;
+
+            const boundingBox = new THREE.Box3().setFromObject(obstacleModel);
+            this.obstacleHeights[obstacleName] = boundingBox.max.y - boundingBox.min.y;
+    
+
+            const matrixObject = new THREE.Object3D();
+            const height = this.game.platformHeight/2+this.obstacleHeights[obstacleName]/2;
+            matrixObject.position.set(-50,height,0);
+            matrixObject.rotation.set(0,-Math.PI,0,"XYZ");
+            matrixObject.updateMatrix();
+
+            this.obstacleObjects[obstacleName] = [];
+
+            for (let i = 0; i < this.totalInstances; i++)
+            {
+                this.obstacleInstances[obstacleName].setMatrixAt(i,matrixObject.matrix);
+                this.obstacleObjects[obstacleName].push(new Obstacle(this.game,this,obstacleName,-50,0));
+            };
+
+            this.game.scene.add(this.obstacleInstances[obstacleName]);
+
+        });
 
         const limit = (this.playerGap/this.obstacleGap) - 1;
 
@@ -32,7 +69,7 @@ export default class ObstacleSpawner extends GameObject
 
         if(this.game.player.mesh && this.game.player.mesh.position.x > this.lastPlayerPos + this.obstacleGap)
         {
-            this.lastPlayerPos = Math.abs(this.game.player.mesh.position.x);
+            this.lastPlayerPos = this.game.player.mesh.position.x;
 
             this.spawnObstacleRow(this.lastPlayerPos+this.playerGap);
         }
@@ -55,18 +92,8 @@ export default class ObstacleSpawner extends GameObject
         if(obstacleIndex === -1) return;
 
         const obstacleName = this.obstacleNames[obstacleIndex];
-
-        if(this.hiddenObstacles[obstacleName].length > 0)
-        {
-            const obstacle = this.hiddenObstacles[obstacleName].pop();
-            obstacle.mesh.visible = true;
-            obstacle.setLanePosition(x,z);
-        }
-        else
-        {
-            new Obstacle(this.game,this,obstacleName,x,z);
-        }
-
+        const currentObstacleCount = this.obstacleCounts[obstacleName];
+        this.obstacleObjects[obstacleName][currentObstacleCount].setLanePosition(x,z);
     }
 
     shuffleRow(row)

@@ -1,9 +1,10 @@
 import React from 'react';
 import coinImage from "../assets/images/coin.png";
 
-function RunningGameInterface({refs})
+function RunningGameInterface({refs,gameState})
 {
     return (
+        gameState !== -1 &&
         <>
             <div className='position-absolute fs-1 text-white top-0 mt-4 d-flex flex-column align-items-end gap-2' style={{right:0,minWidth:"125px"}}>
                 <h3 className='status-container text-center w-100' ref={refs.scoreLabelRef}>0</h3>
@@ -14,6 +15,7 @@ function RunningGameInterface({refs})
                 </div>
             </div>
         </>
+    
     );
 }
 

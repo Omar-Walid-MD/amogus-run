@@ -13,13 +13,14 @@ export default class Player extends GameObject
         this.size = [0.5,1];
 
         const ammo = this.game.ammo;
+        this.ammoVector = new ammo.btVector3(0,0,0);
 
         this.mainColliderShape = new ammo.btCapsuleShape(0.5,1);
-        this.mainColliderTransform = new ammo.btTransform(); this.mainColliderTransform.setIdentity(); this.mainColliderTransform.setOrigin(new ammo.btVector3(0,0,0));
+        this.mainColliderTransform = new ammo.btTransform(); this.mainColliderTransform.setIdentity(); this.mainColliderTransform.setOrigin(this.getAmmoVector(0,0,0));
         
         this.sweepColliderShape = new ammo.btCapsuleShape(0.25,0.15);
         this.sweepColliderShape.setMargin(0.05);
-        this.sweepColliderTransform = new ammo.btTransform(); this.sweepColliderTransform.setIdentity(); this.sweepColliderTransform.setOrigin(new ammo.btVector3(0,0,0));
+        this.sweepColliderTransform = new ammo.btTransform(); this.sweepColliderTransform.setIdentity(); this.sweepColliderTransform.setOrigin(this.getAmmoVector(0,0,0));
 
         const gltf = game.models.amogus;
 
@@ -68,6 +69,9 @@ export default class Player extends GameObject
         this.crossfadeToAction("idle");
 
         this.updateRateTicks = 200;
+
+        this.updateWalkDirection({});
+
     
     }
 
@@ -83,7 +87,7 @@ export default class Player extends GameObject
         // Transform for the ghost object
         const ghostTransform = new ammo.btTransform();
         ghostTransform.setIdentity();
-        ghostTransform.setOrigin(new ammo.btVector3(0, 2, 0)); // Initial position of the character
+        ghostTransform.setOrigin(this.getAmmoVector(0,2,0)); // Initial position of the character
         
         const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,0,"XYZ"));
         ghostTransform.setRotation(new ammo.btQuaternion(quaternion.x,quaternion.y,quaternion.z,quaternion.w));
@@ -187,7 +191,7 @@ export default class Player extends GameObject
                         this.jumping = false;
                         if(this.sweeping)
                         {
-                            this.velocity.y = 0;
+                            this.updateWalkDirection({y:0})
                         }
                     }
     
@@ -202,10 +206,15 @@ export default class Player extends GameObject
 
             if(this.updateRateTicks === 0)
             {
+                if(this.game.rate < 2)
+                {
+                    this.game.rate += 0.0001;
+                }
+
                 this.updateWalkDirection({x:this.speed*this.game.rate});
                 this.updateRateTicks = 200;
             }
-            else this.updateRateTicks--;
+            else this.updateRateTicks -= this.game.deltaTime * 60;
         
         }
         
@@ -220,7 +229,7 @@ export default class Player extends GameObject
     setOrigin(x,y,z)
     {
         const transform = this.ghostObject.getWorldTransform();
-        transform.setOrigin(new this.game.ammo.btVector3(x,y,z));
+        transform.setOrigin(this.getAmmoVector(x,y,z));
     }
 
     getOrigin()
@@ -231,24 +240,20 @@ export default class Player extends GameObject
 
     updateMeshPosition()
     {
-        const transform = this.ghostObject.getWorldTransform();
-
-        // const origin = transform.getOrigin();
-        // const position = new THREE.Vector3(origin.x(), origin.y(), origin.z());
-
         this.mesh.position.copy(this.origin);
         if(this.sweeping) this.mesh.position.y += 0.5;
-        // this.mesh.quaternion.copy(quaternion);
 
     }
 
     onGround()
     {
         const ammo = this.game.ammo;
-        const transform = this.ghostObject.getWorldTransform();
 
         const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
         const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1.5,this.origin.z);
+
+        // const vector1 = this.getAmmoVector(0,0,0);
+        // const vector2 = this.getAmmoVector(1,1,1);
 
         const rayCallback = new ammo.ClosestRayResultCallback(rayStart, rayEnd);
 
@@ -292,6 +297,7 @@ export default class Player extends GameObject
                     if(this.game.impostor.currentState !== this.game.impostor.states.BEHIND)
                     {
                         this.lose();
+                        this.game.impostor.move(this.currentLane);
                         return;
                     }
                     else
@@ -325,7 +331,7 @@ export default class Player extends GameObject
         if(z !== undefined) this.velocity.z = z;
         
         this.characterController.setWalkDirection(
-            new this.game.ammo.btVector3(this.velocity.x,this.velocity.y,this.velocity.z)
+            this.getAmmoVector(this.velocity.x,this.velocity.y,this.velocity.z)
         );
     }
 
@@ -381,7 +387,7 @@ export default class Player extends GameObject
             this.updateWalkDirection({z:direction*0.35});
             
             setTimeout(() => {
-                this.game.impostor.move(this.currentLane);
+                if(!this.lost) this.game.impostor.move(this.currentLane);
             }, 50);
         }
     }
@@ -452,6 +458,7 @@ export default class Player extends GameObject
 
     lose()
     {
+        this.lost = true;
         this.game.lose();
         this.game.impostor.setCollider(1);
         this.game.impostor.approachPlayer();
@@ -462,7 +469,13 @@ export default class Player extends GameObject
         {
             this.colliderSwapState = 2;
         }
-        this.lost = true;
+
+        setTimeout(() => {
+            if(this.game.currentState === this.game.states.RUNNING)
+            {
+                this.game.showEndScreen();
+            }
+        }, 1500);
     }
 
     remove()
@@ -475,6 +488,12 @@ export default class Player extends GameObject
         ammo.destroy(this.characterController);
         this.game.physicsWorld.removeCollisionObject(this.ghostObject);
         ammo.destroy(this.ghostObject);
+    }
+
+    getAmmoVector(x,y,z)
+    {
+        this.ammoVector.setValue(x,y,z);
+        return this.ammoVector;
     }
     
 }
