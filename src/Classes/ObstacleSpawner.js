@@ -103,5 +103,12 @@ export default class ObstacleSpawner extends GameObject
           [row[i], row[j]] = [row[j], row[i]]; 
         } 
         return row; 
-      }; 
+    }
+
+    remove()
+    {
+        Object.values(this.obstacleInstances).forEach((obstacleInstance)=>{
+            this.game.scene.remove(obstacleInstance);
+        });
+    }
 }

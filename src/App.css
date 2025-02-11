@@ -157,7 +157,7 @@ body, #root {
 
 .interface-animation .down
 {
-  transform: translateY(-200%);
+  transform: translateY(-100%);
 }
 
 .interface-animation.show .down
@@ -172,6 +172,6 @@ body, #root {
 
 @keyframes interface-down
 {
-  0% {transform: translateY(-200%);}
+  0% {transform: translateY(-100%);}
   100% {transform: translateY(0%);}  
 }

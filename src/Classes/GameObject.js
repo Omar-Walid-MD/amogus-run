@@ -139,7 +139,6 @@ export default class GameObject
 
         if(this.mesh)
         {
-            this.mesh.userData.physicsBody = null;
             this.game.scene.remove(this.mesh);
             if(this.mesh.geometry) this.mesh.geometry.dispose();
             if(this.mesh.material)

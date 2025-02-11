@@ -104,7 +104,7 @@ export default class Game
 
         this.scene.add(this.directionalLight);
 
-        if(!this.isMobile) this.initBackground();
+        this.initBackground();
 
         this.endScreenOverlay = new THREE.Mesh(
             new THREE.PlaneGeometry(5,5),
@@ -404,7 +404,7 @@ export default class Game
             this.timers[i].execute(); 
         }
 
-        if(!this.isMobile) this.updateBackground();
+        this.updateBackground();
 
             
         this.physicsWorld.stepSimulation(this.deltaTime,5,1/60);
