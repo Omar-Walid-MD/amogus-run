@@ -136,7 +136,6 @@ function GameWindow() {
             }
         }
 
-
         Object.entries(modelImports).forEach(([modelName,data])=>{
     
             const [name,type] = modelName.split(".");

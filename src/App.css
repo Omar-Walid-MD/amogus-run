@@ -175,3 +175,27 @@ body, #root {
   0% {transform: translateY(-100%);}
   100% {transform: translateY(0%);}  
 }
+
+
+.key-container
+{
+  min-width: 45px;
+  background-color: rgb(205, 205, 205);
+  border-radius: 0.35rem;
+  box-shadow: 0 3px 0px black;
+  /* border: 3px solid black; */
+  padding: 0 0.4rem 0.5rem 0.4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.key-label
+{
+  width: 100%;
+  text-align: center;
+  background-color: white;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+
+}

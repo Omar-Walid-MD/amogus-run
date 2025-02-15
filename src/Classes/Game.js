@@ -176,7 +176,7 @@ export default class Game
                 {
                     touchDistance.x = 0;
                 }
-                else if(Math.abs(touchDistance.y) < 50)
+                if(Math.abs(touchDistance.y) < 50)
                 {
                     touchDistance.y = 0;
                 }

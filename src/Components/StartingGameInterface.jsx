@@ -30,16 +30,28 @@ function StartingGameInterface({game,isMobile,gameState})
                 onClick={game?.startRun}>Start!</Button>
                 {
                     !isMobile &&
-                    <p className='text-primary fs-5 fw-semibold'>(Or Press Space to Run!)</p>
+                    <p className='text-primary fs-5 fw-semibold mt-2'>(Or Press Space to Run!)</p>
                 }
             </div>
             {
                 !isMobile &&
                 <div className='position-absolute bottom-0 p-3 fw-bold up' style={{right:0}}>
-                    <p className='m-0'>A to LEFT</p>
-                    <p className='m-0'>D to RIGHT</p>
-                    <p className='m-0'>S to SWEEP</p>
-                    <p className='m-0'>SPACE to JUMP</p>
+      
+                    <div className='d-flex justify-content-between align-items-stretch gap-2'>
+                        <div className="d-flex flex-column align-items-center gap-2">
+                            <div className='key-container mb-2' style={{width:"150px"}}><div className="key-label">SPACE</div></div>
+                            <div className='key-container mb-2'><div className="key-label">A</div></div>
+                            <div className='key-container mb-2'><div className="key-label">D</div></div>
+                            <div className='key-container mb-2'><div className="key-label">S</div></div>
+                        </div>
+                        <div className="d-flex justify-content-between py-2 flex-column align-items-center fs-5">
+                            <p className='m-0'>Jump</p>
+                            <p className='m-0'>Left</p>
+                            <p className='m-0'>Right</p>
+                            <p className='m-0'>Down</p>
+                        </div>
+                    </div>
+                    
                 </div>
             }
 

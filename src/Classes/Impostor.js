@@ -61,13 +61,15 @@ export default class Impostor extends GameObject
             DECELERATING: 3
         };
 
-        this.currentState = this.states.BEHIND;
+        this.currentState = null;//this.states.BEHIND;
 
         this.maxRunTicks = 10*60;
         this.runTicks = this.maxRunTicks;
         this.behindThreshold = 10;
 
         this.updateRateTicks = 200;
+
+        this.velocity.x = -1;
 
         this.updateWalkDirection();
     
@@ -152,6 +154,16 @@ export default class Impostor extends GameObject
         if(this.currentState === this.states.BEHIND)
         {
             return;
+        }
+        else if(this.currentState === null)
+        {
+            if(this.getOrigin().x <= -20)
+            {
+                this.velocity.x = 0;
+                this.updateWalkDirection();
+                this.currentState === this.states.BEHIND;
+            }
+            this.updateWalkDirection();
         }
 
         this.origin = this.getOrigin();
@@ -318,8 +330,6 @@ export default class Impostor extends GameObject
     onGround()
     {
         const ammo = this.game.ammo;
-        const transform = this.ghostObject.getWorldTransform();
-        // const origin = transform.getOrigin();
 
         const rayStart = new ammo.btVector3(this.origin.x,this.origin.y,this.origin.z);
         const rayEnd = new ammo.btVector3(this.origin.x,this.origin.y-1,this.origin.z);
@@ -473,7 +483,8 @@ export default class Impostor extends GameObject
     startRun()
     {
         this.currentState = this.states.STARTING;
-        this.velocity.x = 0.35;
+        this.setOrigin(-9,2,0);
+        this.velocity.x = 0.25;
         this.updateWalkDirection();
         this.crossfadeToAction("start-impostor");
     }
