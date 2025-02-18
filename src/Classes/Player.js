@@ -204,7 +204,7 @@ export default class Player extends GameObject
                 }
             }
 
-            if(this.updateRateTicks === 0)
+            if(this.updateRateTicks <= 0)
             {
                 if(this.game.rate < 2)
                 {
@@ -213,6 +213,7 @@ export default class Player extends GameObject
 
                 this.updateWalkDirection({x:this.speed*this.game.rate});
                 this.updateRateTicks = 200;
+
             }
             else this.updateRateTicks -= this.game.deltaTime * 60;
         

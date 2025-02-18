@@ -294,7 +294,7 @@ export default class Impostor extends GameObject
 
         this.updateMeshPosition();
 
-        if(this.updateRateTicks === 0)
+        if(this.updateRateTicks <= 0)
         {
             this.updateWalkDirection();
             this.updateRateTicks = 200;
